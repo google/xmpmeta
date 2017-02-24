@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Device>
+  <Device:Cameras>
+    <rdf:Seq>
+      <rdf:li>
+        <Device:Camera>
+          <Camera:Audio Audio:Mime="audio/mp4" Audio:Data="MTIzQUJDNDU2REVG"/>
+        </Device:Camera>
+      </rdf:li>
+      <rdf:li>
+        <Device:Camera>
+          <Camera:Audio Audio:Mime="audio/mp4" Audio:Data="MTIzQUJDNDU2REVG"/>
+        </Device:Camera>
+      </rdf:li>
+      <rdf:li>
+        <Device:Camera>
+          <Camera:Audio Audio:Mime="audio/mp4" Audio:Data="MTIzQUJDNDU2REVG"/>
+        </Device:Camera>
+      </rdf:li>
+    </rdf:Seq>
+  </Device:Cameras>
+</Device>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP">
+  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <rdf:Description xmlns:GImage="http://ns.google.com/photos/1.0/image/" xmlns:GAudio="http://ns.google.com/photos/1.0/audio/" xmlns:GPano="http://ns.google.com/photos/1.0/panorama/" rdf:about="" GPano:CroppedAreaLeftPixels="0" GPano:CroppedAreaTopPixels="3" GPano:CroppedAreaImageWidthPixels="5" GPano:CroppedAreaImageHeightPixels="10" GPano:FullPanoWidthPixels="10" GPano:FullPanoHeightPixels="20" GPano:InitialViewHeadingDegrees="0" GImage:Mime="image/jpeg" GAudio:Mime="audio/mp4"/>
+  </rdf:RDF>
+</x:xmpmeta>

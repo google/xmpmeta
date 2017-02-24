@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Camera>
+  <Camera:CameraPose CameraPose:PositionX="-85.320000" CameraPose:PositionY="-135.203410" CameraPose:PositionZ="1.203000" CameraPose:Timestamp="1455818790"/>
+</Camera>

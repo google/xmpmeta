@@ -1,0 +1,19 @@
+name: "xdmlib"
+description:
+    "xdmlib is a portable library for parsing and writing XDM metadata, "
+    "developed at Google. It is now open-sourced. "
+    " "
+    "The eXtensible Device Metadata (XDM) specification is a standard for "
+    "storing device-related metadata in common image containers such as JPEG "
+    "and PNG, while maintaining compatibility with existing image viewers. The "
+    "data storage format is based on the Adobe XMP standard. More details at "
+    "[xdm.org](http://xdm.org). "
+
+third_party {
+  url {
+    type: ARCHIVE
+    value: "www.xdm.org"
+  }
+  version: "1.0"
+  last_upgrade_date { year: 2016 month: 3 day: 25 }
+}

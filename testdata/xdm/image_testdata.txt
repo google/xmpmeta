@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Device>
+  <Device:Camera>
+    <Camera:Image Image:Mime="image/jpeg" Image:Data="MTIzQUJDNDU2REVG"/>
+  </Device:Camera>
+</Device>

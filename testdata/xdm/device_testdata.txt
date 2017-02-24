@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP">
+  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <rdf:Description xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:Device="http://ns.xdm.org/photos/1.0/device/" xmlns:DevicePose="http://ns.xdm.org/photos/1.0/devicepose/" xmlns:Profile="http://ns.xdm.org/photos/1.0/profile/" xmlns:Audio="http://ns.xdm.org/photos/1.0/audio/" xmlns:Camera="http://ns.xdm.org/photos/1.0/camera/" rdf:about="">
+      <Device Device:Revision="1.01">
+        <Device:DevicePose DevicePose:Latitude="-85.320000" DevicePose:Longitude="-135.203410" DevicePose:Altitude="1.203000" DevicePose:Timestamp="0"/>
+        <Device:Profiles>
+          <rdf:Seq>
+            <rdf:li>
+              <Device:Profile Profile:Type="VRPhoto">
+                <Profile:CameraIndices>
+                  <rdf:Seq>
+                    <rdf:li>0</rdf:li>
+                    <rdf:li>1</rdf:li>
+                  </rdf:Seq>
+                </Profile:CameraIndices>
+              </Device:Profile>
+            </rdf:li>
+          </rdf:Seq>
+        </Device:Profiles>
+        <Device:Cameras>
+          <rdf:Seq>
+            <rdf:li>
+              <Device:Camera>
+                <Camera:Audio Audio:Mime="audio/mp4" Audio:Data="MTIzQUJDNDU2REVG"/>
+              </Device:Camera>
+            </rdf:li>
+            <rdf:li>
+              <Device:Camera>
+                <Camera:Audio Audio:Mime="audio/mp4" Audio:Data="MTIzQUJDNDU2REVG"/>
+              </Device:Camera>
+            </rdf:li>
+            <rdf:li>
+              <Device:Camera>
+                <Camera:Audio Audio:Mime="audio/mp4" Audio:Data="MTIzQUJDNDU2REVG"/>
+              </Device:Camera>
+            </rdf:li>
+          </rdf:Seq>
+        </Device:Cameras>
+      </Device>
+    </rdf:Description>
+  </rdf:RDF>
+</x:xmpmeta>

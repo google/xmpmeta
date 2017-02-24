@@ -1,0 +1,423 @@
+// Copyright 2016 The XMPMeta Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "xdmlib/device_pose.h"
+
+#include <libxml/tree.h>
+
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+#include "xdmlib/const.h"
+#include "xmpmeta/file.h"
+#include "xmpmeta/test_util.h"
+#include "xmpmeta/xmp_const.h"
+#include "xmpmeta/xmp_data.h"
+#include "xmpmeta/xmp_writer.h"
+#include "xmpmeta/xml/deserializer_impl.h"
+#include "xmpmeta/xml/serializer_impl.h"
+#include "xmpmeta/xml/const.h"
+#include "xmpmeta/xml/utils.h"
+
+using xmpmeta::CreateXmpData;
+using xmpmeta::xml::Deserializer;
+using xmpmeta::xml::DeserializerImpl;
+using xmpmeta::xml::GetFirstDescriptionElement;
+using xmpmeta::xml::Serializer;
+using xmpmeta::xml::SerializerImpl;
+using xmpmeta::xml::ToXmlChar;
+using xmpmeta::xml::XmlConst;
+using xmpmeta::xml::XmlDocToString;
+
+namespace xmpmeta {
+namespace xdm {
+namespace {
+
+const char kNamespaceHref[] = "http://ns.xdm.org/photos/1.0/devicepose/";
+const char kFakeHref[] = "http://notarealh.ref";
+
+const char kTestDataFull[] = "xdm/device_pose_testdata_full.txt";
+const char kTestDataPosition[] = "xdm/device_pose_testdata_position.txt";
+const char kTestDataOrientation[] = "xdm/device_pose_testdata_orientation.txt";
+
+// Same as NormalizeAxisAngle in device_pose.cc
+const std::vector<double>
+NormalizeAxisAngle(const std::vector<double>& coords) {
+  if (coords.size() < 4) {
+    return std::vector<double>();
+  }
+  double length = sqrt((coords[0] * coords[0]) +
+                       (coords[1] * coords[1]) +
+                       (coords[2] * coords[2]));
+  const std::vector<double> normalized =
+      { coords[0] / length, coords[1] / length, coords[2] / length, coords[3] };
+  return normalized;
+}
+
+std::unordered_map<string, xmlNsPtr> SetupNamespaces() {
+  std::unordered_map<string, xmlNsPtr> namespaces;
+  namespaces.emplace(XdmConst::Device(), xmlNewNs(nullptr, ToXmlChar(kFakeHref),
+                                           ToXmlChar(XdmConst::Device())));
+  namespaces.emplace(XdmConst::DevicePose(),
+                     xmlNewNs(nullptr, ToXmlChar(kFakeHref),
+                              ToXmlChar(XdmConst::DevicePose())));
+  return namespaces;
+}
+
+void FreeNamespaces(std::unordered_map<string, xmlNsPtr> xml_ns_map) {
+  for (const auto& entry : xml_ns_map) {
+    xmlFreeNs(entry.second);
+  }
+}
+
+TEST(DevicePose, GetNamespaces) {
+  std::unordered_map<string, string> ns_name_href_map;
+  string prefix(XdmConst::DevicePose());
+
+  double x = -85.32;
+  double y = -135.20341;
+  double z = 1.203;
+  std::vector<double> init_position { x, y, z };
+  std::unique_ptr<DevicePose> pose =
+      DevicePose::FromData(init_position, std::vector<double>(), 0);
+  ASSERT_NE(nullptr, pose);
+
+  ASSERT_TRUE(ns_name_href_map.empty());
+  pose->GetNamespaces(&ns_name_href_map);
+  EXPECT_EQ(1, ns_name_href_map.size());
+  EXPECT_EQ(kNamespaceHref, ns_name_href_map[prefix]);
+}
+
+TEST(DevicePose, FromDataAllEmpty) {
+  std::unique_ptr<DevicePose> pose =
+      DevicePose::FromData(std::vector<double>(), std::vector<double>(), 0);
+  ASSERT_EQ(nullptr, pose);
+}
+
+TEST(DevicePose, FromDataPosition) {
+  double x = -85.32;
+  double y = -135.20341;
+  double z = 1.203;
+  std::vector<double> init_position = { x, y, z };
+
+  std::unique_ptr<DevicePose> pose =
+      DevicePose::FromData(init_position, std::vector<double>(), 0);
+  ASSERT_NE(nullptr, pose);
+
+  std::vector<double> position = pose->GetPosition();
+  ASSERT_TRUE(pose->HasPosition());
+  ASSERT_EQ(3, position.size());
+  EXPECT_EQ(init_position.at(0), position.at(0));
+  EXPECT_EQ(init_position.at(1), position.at(1));
+  EXPECT_EQ(init_position.at(2), position.at(2));
+
+  std::vector<double> orientation = pose->GetOrientationRotationXYZAngle();
+  ASSERT_FALSE(pose->HasOrientation());
+  ASSERT_EQ(0, orientation.size());
+
+  ASSERT_EQ(0, pose->GetTimestamp());
+}
+
+TEST(DevicePose, FromOrientation) {
+  double axis_x = 0;
+  double axis_y = 0;
+  double axis_z = 1;
+  double angle = M_PI_2;
+  int64 timestamp = 1455818790;
+  std::vector<double> init_orientation = { axis_x, axis_y, axis_z, angle };
+  std::unique_ptr<DevicePose> pose =
+      DevicePose::FromData(std::vector<double>(), init_orientation,
+                              timestamp);
+  ASSERT_NE(nullptr, pose);
+
+  std::vector<double> orientation = pose->GetOrientationRotationXYZAngle();
+  ASSERT_EQ(4, orientation.size());
+  const std::vector<double> normalized = NormalizeAxisAngle(init_orientation);
+  EXPECT_EQ(normalized.at(0), orientation.at(0));
+  EXPECT_EQ(normalized.at(1), orientation.at(1));
+  EXPECT_EQ(normalized.at(2), orientation.at(2));
+  EXPECT_EQ(angle, orientation.at(3));
+
+  std::vector<double> position = pose->GetPosition();
+  ASSERT_FALSE(pose->HasPosition());
+  ASSERT_EQ(0, position.size());
+
+  ASSERT_EQ(timestamp, pose->GetTimestamp());
+}
+
+TEST(DevicePose, FromPositionAndOrientation) {
+  double x = -85.32;
+  double y = -135.20341;
+  double z = 1.203;
+  double axis_x = 0;
+  double axis_y = 0;
+  double axis_z = 1;
+  double angle = M_PI_2;
+  int64 timestamp = 1455818790;
+
+  std::vector<double> init_position = { x, y, z };
+  std::vector<double> init_orientation = { axis_x, axis_y, axis_z, angle };
+  std::unique_ptr<DevicePose> pose =
+      DevicePose::FromData(init_position, init_orientation, timestamp);
+  ASSERT_NE(nullptr, pose);
+  std::vector<double> orientation = pose->GetOrientationRotationXYZAngle();
+  ASSERT_TRUE(pose->HasPosition());
+  ASSERT_EQ(4, orientation.size());
+  std::vector<double> normalized = NormalizeAxisAngle(init_orientation);
+  EXPECT_EQ(normalized.at(0), orientation.at(0));
+  EXPECT_EQ(normalized.at(1), orientation.at(1));
+  EXPECT_EQ(normalized.at(2), orientation.at(2));
+  EXPECT_EQ(angle, orientation.at(3));
+
+  std::vector<double> position = pose->GetPosition();
+  ASSERT_TRUE(pose->HasOrientation());
+  ASSERT_EQ(3, position.size());
+  EXPECT_EQ(init_position.at(0), position.at(0));
+  EXPECT_EQ(init_position.at(1), position.at(1));
+  EXPECT_EQ(init_position.at(2), position.at(2));
+
+  ASSERT_EQ(timestamp, pose->GetTimestamp());
+}
+
+TEST(DevicePose, SerializePosition) {
+  double x = -85.32;
+  double y = -135.20341;
+  double z = 1.203;
+  int64 timestamp = 1455818790;
+  std::vector<double> init_position = { x, y, z };
+
+  std::unique_ptr<DevicePose> pose =
+      DevicePose::FromData(init_position, std::vector<double>(), timestamp);
+  ASSERT_NE(nullptr, pose);
+
+  // Set up XML structure.
+  xmlNodePtr device_node = xmlNewNode(nullptr, ToXmlChar(XdmConst::Device()));
+  xmlDocPtr xml_doc = xmlNewDoc(ToXmlChar(XmlConst::Version()));
+  xmlDocSetRootElement(xml_doc, device_node);
+
+  // Create serializer.
+  std::unordered_map<string, xmlNsPtr> namespaces = SetupNamespaces();
+  SerializerImpl serializer(namespaces, device_node);
+  std::unique_ptr<Serializer> pose_serializer =
+      serializer.CreateSerializer(
+          XdmConst::Namespace(XdmConst::DevicePose()), XdmConst::DevicePose());
+  ASSERT_NE(nullptr, pose_serializer);
+
+  ASSERT_TRUE(pose->Serialize(pose_serializer.get()));
+
+  const string testdata_path = TestFileAbsolutePath(kTestDataPosition);
+  std::string expected_xdm_data;
+  ReadFileToStringOrDie(testdata_path, &expected_xdm_data);
+  EXPECT_EQ(expected_xdm_data, XmlDocToString(xml_doc));
+
+  // Clean up.
+  FreeNamespaces(namespaces);
+  xmlFreeDoc(xml_doc);
+}
+
+TEST(DevicePose, SerializeOrientation) {
+  double axis_x = 1;
+  double axis_y = 2;
+  double axis_z = 1.5;
+  double angle = 1.57;
+  std::vector<double> init_orientation = { axis_x, axis_y, axis_z, angle };
+
+  std::unique_ptr<DevicePose> pose =
+      DevicePose::FromData(std::vector<double>(), init_orientation);
+  ASSERT_NE(nullptr, pose);
+
+  // Set up XML structure.
+  xmlNodePtr device_node = xmlNewNode(nullptr, ToXmlChar(XdmConst::Device()));
+  xmlDocPtr xml_doc = xmlNewDoc(ToXmlChar(XmlConst::Version()));
+  xmlDocSetRootElement(xml_doc, device_node);
+
+  // Create serializer.
+  std::unordered_map<string, xmlNsPtr> namespaces = SetupNamespaces();
+  SerializerImpl serializer(namespaces, device_node);
+  std::unique_ptr<Serializer> pose_serializer =
+      serializer.CreateSerializer(
+          XdmConst::Namespace(XdmConst::DevicePose()), XdmConst::DevicePose());
+  ASSERT_NE(nullptr, pose_serializer);
+
+  ASSERT_TRUE(pose->Serialize(pose_serializer.get()));
+
+  const string testdata_path = TestFileAbsolutePath(kTestDataOrientation);
+  std::string expected_xdm_data;
+  ReadFileToStringOrDie(testdata_path, &expected_xdm_data);
+  EXPECT_EQ(expected_xdm_data, XmlDocToString(xml_doc));
+
+  // Clean up.
+  FreeNamespaces(namespaces);
+  xmlFreeDoc(xml_doc);
+}
+
+
+TEST(DevicePose, SerializePositionAndOrientation) {
+  double x = -85.32;
+  double y = -135.20341;
+  double z = 1.203;
+
+  double axis_x = 1;
+  double axis_y = 2;
+  double axis_z = 1.5;
+  double angle = 1.57;
+
+  int64 timestamp = 1455818790;
+  std::vector<double> init_position = { x, y, z };
+  std::vector<double> init_orientation = { axis_x, axis_y, axis_z, angle };
+
+  std::unique_ptr<DevicePose> pose =
+      DevicePose::FromData(init_position, init_orientation, timestamp);
+  ASSERT_NE(nullptr, pose);
+
+  // Set up XML structure.
+  xmlNodePtr device_node = xmlNewNode(nullptr, ToXmlChar(XdmConst::Device()));
+  xmlDocPtr xml_doc = xmlNewDoc(ToXmlChar(XmlConst::Version()));
+  xmlDocSetRootElement(xml_doc, device_node);
+
+  // Create serializer.
+  std::unordered_map<string, xmlNsPtr> namespaces = SetupNamespaces();
+  SerializerImpl serializer(namespaces, device_node);
+  std::unique_ptr<Serializer> pose_serializer =
+      serializer.CreateSerializer(
+          XdmConst::Namespace(XdmConst::DevicePose()), XdmConst::DevicePose());
+  ASSERT_NE(nullptr, pose_serializer);
+
+  ASSERT_TRUE(pose->Serialize(pose_serializer.get()));
+
+  const string testdata_path = TestFileAbsolutePath(kTestDataFull);
+  std::string expected_xdm_data;
+  ReadFileToStringOrDie(testdata_path, &expected_xdm_data);
+  EXPECT_EQ(expected_xdm_data, XmlDocToString(xml_doc));
+
+  // Clean up.
+  FreeNamespaces(namespaces);
+  xmlFreeDoc(xml_doc);
+}
+
+TEST(DevicePose, ReadMetadataPositionOrientation) {
+  std::unique_ptr<XmpData> xmp_data = CreateXmpData(true);
+  xmlNodePtr description_node =
+      GetFirstDescriptionElement(xmp_data->ExtendedSection());
+
+  // Set up the XML structure.
+  xmlNodePtr parent_node =
+      xmlNewNode(nullptr, ToXmlChar(XdmConst::Device()));
+  xmlAddChild(description_node, parent_node);
+
+  xmlNsPtr device_ns = xmlNewNs(nullptr, ToXmlChar("http://fakeh.ref"),
+                                ToXmlChar(XdmConst::Device()));
+  xmlNodePtr pose_node =
+      xmlNewNode(device_ns, ToXmlChar(XdmConst::DevicePose()));
+  xmlAddChild(parent_node, pose_node);
+  xmlNsPtr pose_ns = xmlNewNs(nullptr, ToXmlChar(kNamespaceHref),
+                              ToXmlChar(XdmConst::DevicePose()));
+
+  xmlSetNsProp(pose_node, pose_ns, ToXmlChar("Latitude"),
+               ToXmlChar("1.5"));
+  xmlSetNsProp(pose_node, pose_ns, ToXmlChar("Longitude"),
+               ToXmlChar("2.5"));
+  xmlSetNsProp(pose_node, pose_ns, ToXmlChar("Altitude"),
+               ToXmlChar("-1"));
+
+  xmlSetNsProp(pose_node, pose_ns, ToXmlChar("RotationAxisX"),
+               ToXmlChar("1.5"));
+  xmlSetNsProp(pose_node, pose_ns, ToXmlChar("RotationAxisY"),
+               ToXmlChar("2.5"));
+  xmlSetNsProp(pose_node, pose_ns, ToXmlChar("RotationAxisZ"),
+               ToXmlChar("1.5"));
+  xmlSetNsProp(pose_node, pose_ns, ToXmlChar("RotationAngle"),
+               ToXmlChar("1.57"));
+
+  // Create an DevicePose from the metadata.
+  DeserializerImpl deserializer(description_node);
+  std::unique_ptr<DevicePose> pose =
+      DevicePose::FromDeserializer(deserializer);
+  ASSERT_NE(nullptr, pose.get());
+
+  std::vector<double> values = pose->GetPosition();
+  ASSERT_EQ(3, values.size());
+  EXPECT_EQ(1.5, values[0]);
+  EXPECT_EQ(2.5, values[1]);
+  EXPECT_EQ(-1, values[2]);
+
+  values = pose->GetOrientationRotationXYZAngle();
+  ASSERT_EQ(4, values.size());
+  std::vector<double> raw_values({1.5, 2.5, 1.5, 1.57});
+  std::vector<double> normalized = NormalizeAxisAngle(raw_values);
+  EXPECT_EQ(normalized[0], values[0]);
+  EXPECT_EQ(normalized[1], values[1]);
+  EXPECT_EQ(normalized[2], values[2]);
+  EXPECT_EQ(normalized[3], values[3]);
+
+  EXPECT_EQ(-1, pose->GetTimestamp());
+
+  xmlFreeNs(device_ns);
+  xmlFreeNs(pose_ns);
+}
+
+TEST(DevicePose, ReadMetadataOrientation) {
+  std::unique_ptr<XmpData> xmp_data = CreateXmpData(true);
+  xmlNodePtr description_node =
+      GetFirstDescriptionElement(xmp_data->ExtendedSection());
+
+  // Set up the XML structure.
+  xmlNodePtr parent_node = xmlNewNode(nullptr, ToXmlChar(XdmConst::Device()));
+  xmlAddChild(description_node, parent_node);
+
+  xmlNsPtr device_ns = xmlNewNs(nullptr, ToXmlChar("http://fakeh.ref"),
+                                ToXmlChar(XdmConst::Device()));
+  xmlNodePtr pose_node =
+      xmlNewNode(device_ns, ToXmlChar(XdmConst::DevicePose()));
+  xmlAddChild(parent_node, pose_node);
+  xmlNsPtr pose_ns = xmlNewNs(nullptr, ToXmlChar(kNamespaceHref),
+                              ToXmlChar(XdmConst::DevicePose()));
+
+  xmlSetNsProp(pose_node, pose_ns, ToXmlChar("RotationAxisX"),
+               ToXmlChar("1.5"));
+  xmlSetNsProp(pose_node, pose_ns, ToXmlChar("RotationAxisY"),
+               ToXmlChar("2.5"));
+  xmlSetNsProp(pose_node, pose_ns, ToXmlChar("RotationAxisZ"),
+               ToXmlChar("1.5"));
+  xmlSetNsProp(pose_node, pose_ns, ToXmlChar("RotationAngle"),
+               ToXmlChar("1.57"));
+  xmlSetNsProp(pose_node, pose_ns, ToXmlChar("Timestamp"),
+               ToXmlChar("1455818790"));
+
+  // Create an DevicePose from the metadata.
+  DeserializerImpl deserializer(description_node);
+  std::unique_ptr<DevicePose> pose =
+      DevicePose::FromDeserializer(deserializer);
+  ASSERT_NE(nullptr, pose.get());
+
+  std::vector<double> values = pose->GetOrientationRotationXYZAngle();
+  ASSERT_EQ(4, values.size());
+  std::vector<double> raw_values({1.5, 2.5, 1.5, 1.57});
+  std::vector<double> normalized = NormalizeAxisAngle(raw_values);
+  EXPECT_EQ(normalized[0], values[0]);
+  EXPECT_EQ(normalized[1], values[1]);
+  EXPECT_EQ(normalized[2], values[2]);
+  EXPECT_EQ(normalized[3], values[3]);
+
+  ASSERT_EQ(1455818790, pose->GetTimestamp());
+
+  xmlFreeNs(device_ns);
+  xmlFreeNs(pose_ns);
+}
+
+}  // namespace
+}  // namespace xdm
+}  // namespace xmpmeta

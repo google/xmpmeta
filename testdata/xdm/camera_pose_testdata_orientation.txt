@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Camera>
+  <Camera:CameraPose CameraPose:RotationAxisX="0.371391" CameraPose:RotationAxisY="0.742781" CameraPose:RotationAxisZ="0.557086" CameraPose:RotationAngle="1.570000"/>
+</Camera>

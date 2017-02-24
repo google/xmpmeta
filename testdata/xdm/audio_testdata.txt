@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Device>
+  <Device:Camera>
+    <Camera:Audio Audio:Mime="image/wav" Audio:Data="MTIzQUJDNDU2REVG"/>
+  </Device:Camera>
+</Device>

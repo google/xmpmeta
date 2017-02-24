@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Device>
+  <Device:DevicePose DevicePose:RotationAxisX="0.371391" DevicePose:RotationAxisY="0.742781" DevicePose:RotationAxisZ="0.557086" DevicePose:RotationAngle="1.570000"/>
+</Device>

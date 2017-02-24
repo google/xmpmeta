@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Device>
+  <Device:Camera>
+    <Camera:ImagingModel>
+      <Camera:EquirectModel EquirectModel:CroppedAreaLeftPixels="0" EquirectModel:CroppedAreaTopPixels="1530" EquirectModel:CroppedAreaImageWidthPixels="3476" EquirectModel:CroppedAreaImageHeightPixels="1355" EquirectModel:FullImageWidthPixels="8192" EquirectModel:FullImageHeightPixels="4096"/>
+    </Camera:ImagingModel>
+  </Device:Camera>
+</Device>

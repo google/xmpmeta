@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Device>
+  <Device:DevicePose DevicePose:Latitude="-85.320000" DevicePose:Longitude="-135.203410" DevicePose:Altitude="1.203000" DevicePose:Timestamp="1455818790"/>
+</Device>

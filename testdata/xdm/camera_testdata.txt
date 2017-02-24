@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Device>
+  <Device:Camera>
+    <Camera:Audio Audio:Mime="audio/mp4" Audio:Data="MTIzQUJDNDU2REVG"/>
+    <Camera:Image Image:Mime="image/jpeg" Image:Data="MTIzQUJDNDU2REVG"/>
+    <Camera:CameraPose CameraPose:RotationAxisX="0.371391" CameraPose:RotationAxisY="0.742781" CameraPose:RotationAxisZ="0.557086" CameraPose:RotationAngle="1.570000"/>
+  </Device:Camera>
+</Device>
