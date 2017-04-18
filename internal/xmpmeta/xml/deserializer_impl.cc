@@ -14,14 +14,16 @@
 
 #include "deserializer_impl.h"
 
+#include <algorithm>
+
 #include "base/integral_types.h"
 #include "glog/logging.h"
 #include "strings/numbers.h"
 #include "xmpmeta/base64.h"
-#include "xmpmeta/xmp_parser.h"
 #include "xmpmeta/xml/const.h"
 #include "xmpmeta/xml/search.h"
 #include "xmpmeta/xml/utils.h"
+#include "xmpmeta/xmp_parser.h"
 
 namespace xmpmeta {
 namespace xml {
@@ -61,11 +63,11 @@ xmlNodePtr FindSeqNode(const xmlNodePtr node, const string& prefix,
 bool GetStringProperty(const xmlNodePtr node, const string& prefix,
                        const string& property, string* value) {
   const xmlDocPtr doc = node->doc;
-  for (const _xmlAttr* attribute = node->properties;
-       attribute != nullptr; attribute = attribute->next) {
+  for (const _xmlAttr* attribute = node->properties; attribute != nullptr;
+       attribute = attribute->next) {
     // If prefix is not empty, then the attribute's namespace must not be null.
     if (((attribute->ns && !prefix.empty() &&
-         strcmp(FromXmlChar(attribute->ns->prefix), prefix.data()) == 0) ||
+          strcmp(FromXmlChar(attribute->ns->prefix), prefix.data()) == 0) ||
          prefix.empty()) &&
         strcmp(FromXmlChar(attribute->name), property.data()) == 0) {
       xmlChar* attribute_string =
@@ -88,10 +90,8 @@ bool ReadNodeContent(const xmlNodePtr node, const string& prefix,
     return false;
   }
   if (!prefix.empty() &&
-      (element->ns == nullptr ||
-       element->ns->prefix == nullptr ||
-       strcmp(FromXmlChar(element->ns->prefix),
-              prefix.data()) != 0)) {
+      (element->ns == nullptr || element->ns->prefix == nullptr ||
+       strcmp(FromXmlChar(element->ns->prefix), prefix.data()) != 0)) {
     return false;
   }
   xmlChar* node_content = xmlNodeGetContent(element);
@@ -132,13 +132,12 @@ bool ReadBase64Property(const xmlNodePtr node, const string& prefix,
 
 }  // namespace
 
-DeserializerImpl::DeserializerImpl(const xmlNodePtr node) : node_(node),
-  list_node_(nullptr) {}
+DeserializerImpl::DeserializerImpl(const xmlNodePtr node)
+    : node_(node), list_node_(nullptr) {}
 
 // Public methods.
-std::unique_ptr<Deserializer>
-DeserializerImpl::CreateDeserializer(const string& prefix,
-                                     const string& child_name) const {
+std::unique_ptr<Deserializer> DeserializerImpl::CreateDeserializer(
+    const string& prefix, const string& child_name) const {
   if (child_name.empty()) {
     LOG(ERROR) << "Child name is empty";
     return nullptr;
@@ -199,6 +198,26 @@ bool DeserializerImpl::ParseBase64(const string& prefix, const string& name,
   return ReadBase64Property(node_, prefix, name, value);
 }
 
+bool DeserializerImpl::ParseIntArrayBase64(const string& prefix,
+                                           const string& name,
+                                           std::vector<int>& values) const {
+  string base64_data;
+  if (!ReadStringProperty(node_, prefix, name, &base64_data)) {
+    return false;
+  }
+  return DecodeIntArrayBase64(base64_data, values);
+}
+
+bool DeserializerImpl::ParseFloatArrayBase64(const string& prefix,
+                                             const string& name,
+                                             std::vector<float>& values) const {
+  string base64_data;
+  if (!ReadStringProperty(node_, prefix, name, &base64_data)) {
+    return false;
+  }
+  return DecodeFloatArrayBase64(base64_data, values);
+}
+
 bool DeserializerImpl::ParseBoolean(const string& prefix, const string& name,
                                     bool* value) const {
   string string_value;
@@ -252,8 +271,7 @@ bool DeserializerImpl::ParseIntArray(const string& prefix,
   }
   values->clear();
   int i = 0;
-  for (xmlNodePtr li_node = GetElementAt(seq_node, 0);
-       li_node != nullptr;
+  for (xmlNodePtr li_node = GetElementAt(seq_node, 0); li_node != nullptr;
        li_node = GetElementAt(seq_node, ++i)) {
     int int_value;
     if (!SimpleAtoi(GetLiNodeContent(li_node), &int_value)) {
@@ -276,8 +294,7 @@ bool DeserializerImpl::ParseDoubleArray(const string& prefix,
   }
   values->clear();
   int i = 0;
-  for (xmlNodePtr li_node = GetElementAt(seq_node, 0);
-       li_node != nullptr;
+  for (xmlNodePtr li_node = GetElementAt(seq_node, 0); li_node != nullptr;
        li_node = GetElementAt(seq_node, ++i)) {
     double double_value;
     if (!safe_strtod(GetLiNodeContent(li_node), &double_value)) {

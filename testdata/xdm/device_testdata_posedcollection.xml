@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP">
+  <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+    <rdf:Description xmlns:CameraPose="http://ns.xdm.org/photos/1.0/camerapose/" xmlns:Profile="http://ns.xdm.org/photos/1.0/profile/" xmlns:Mesh="http://ns.xdm.org/photos/1.0/mesh/" xmlns:Device="http://ns.xdm.org/photos/1.0/device/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:DevicePose="http://ns.xdm.org/photos/1.0/devicepose/" xmlns:ImagingModel="http://ns.xdm.org/photos/1.0/imagingmodel/" xmlns:Camera="http://ns.xdm.org/photos/1.0/camera/" xmlns:Image="http://ns.xdm.org/photos/1.0/image/" xmlns:VendorInfo="http://ns.xdm.org/photos/1.0/vendorinfo/" xmlns:EquirectModel="http://ns.xdm.org/photos/1.0/equirectmodel/" xmlns:NavigationalConnectivity="http://ns.xdm.org/photos/1.0/navigationalconnectivity/" rdf:about="">
+      <Device Device:Revision="1.02">
+        <Device:DevicePose DevicePose:Latitude="-85.320000" DevicePose:Longitude="-135.203410" DevicePose:Altitude="1.203000" DevicePose:Timestamp="0"/>
+        <Device:Profiles>
+          <rdf:Seq>
+            <rdf:li>
+              <Device:Profile Profile:Type="PosedCollection">
+                <Profile:CameraIndices>
+                  <rdf:Seq>
+                    <rdf:li>0</rdf:li>
+                    <rdf:li>1</rdf:li>
+                    <rdf:li>2</rdf:li>
+                  </rdf:Seq>
+                </Profile:CameraIndices>
+              </Device:Profile>
+            </rdf:li>
+          </rdf:Seq>
+        </Device:Profiles>
+        <Device:Cameras>
+          <rdf:Seq>
+            <rdf:li>
+              <Device:Camera>
+                <Camera:Image Image:Mime="image/jpeg" Image:ImageId="unique_image_id"/>
+                <Camera:CameraPose CameraPose:RotationAxisX="0.371391" CameraPose:RotationAxisY="0.742781" CameraPose:RotationAxisZ="0.557086" CameraPose:RotationAngle="1.570000"/>
+                <Camera:VendorInfo VendorInfo:Manufacturer="manufacturer_1" VendorInfo:Model="model_1" VendorInfo:Notes="notes_1"/>
+                <Camera:EquirectModel EquirectModel:CroppedAreaLeftPixels="0" EquirectModel:CroppedAreaTopPixels="1530" EquirectModel:CroppedAreaImageWidthPixels="3476" EquirectModel:CroppedAreaImageHeightPixels="1355" EquirectModel:FullImageWidthPixels="8192" EquirectModel:FullImageHeightPixels="4096"/>
+              </Device:Camera>
+            </rdf:li>
+            <rdf:li>
+              <Device:Camera>
+                <Camera:Image Image:Mime="image/jpeg" Image:ImageId="unique_image_id"/>
+                <Camera:CameraPose CameraPose:RotationAxisX="0.371391" CameraPose:RotationAxisY="0.742781" CameraPose:RotationAxisZ="0.557086" CameraPose:RotationAngle="1.570000"/>
+                <Camera:VendorInfo VendorInfo:Manufacturer="manufacturer_1" VendorInfo:Model="model_1" VendorInfo:Notes="notes_1"/>
+                <Camera:EquirectModel EquirectModel:CroppedAreaLeftPixels="0" EquirectModel:CroppedAreaTopPixels="1530" EquirectModel:CroppedAreaImageWidthPixels="3476" EquirectModel:CroppedAreaImageHeightPixels="1355" EquirectModel:FullImageWidthPixels="8192" EquirectModel:FullImageHeightPixels="4096"/>
+              </Device:Camera>
+            </rdf:li>
+            <rdf:li>
+              <Device:Camera>
+                <Camera:Image Image:Mime="image/jpeg" Image:ImageId="unique_image_id"/>
+                <Camera:CameraPose CameraPose:RotationAxisX="0.371391" CameraPose:RotationAxisY="0.742781" CameraPose:RotationAxisZ="0.557086" CameraPose:RotationAngle="1.570000"/>
+                <Camera:VendorInfo VendorInfo:Manufacturer="manufacturer_1" VendorInfo:Model="model_1" VendorInfo:Notes="notes_1"/>
+                <Camera:EquirectModel EquirectModel:CroppedAreaLeftPixels="0" EquirectModel:CroppedAreaTopPixels="1530" EquirectModel:CroppedAreaImageWidthPixels="3476" EquirectModel:CroppedAreaImageHeightPixels="1355" EquirectModel:FullImageWidthPixels="8192" EquirectModel:FullImageHeightPixels="4096"/>
+              </Device:Camera>
+            </rdf:li>
+          </rdf:Seq>
+        </Device:Cameras>
+        <Device:VendorInfo VendorInfo:Manufacturer="manufacturer_1" VendorInfo:Model="model_1" VendorInfo:Notes="notes_1"/>
+        <Device:Mesh Mesh:VertexCount="4" Mesh:VertexPosition="AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAIA/" Mesh:FaceCount="4" Mesh:FaceIndices="AAAAAAEAAAACAAAAAAAAAAEAAAADAAAAAAAAAAMAAAACAAAAAQAAAAIAAAADAAAA" Mesh:Metric="false" Mesh:Software="software"/>
+        <Device:NavigationalConnectivity>
+          <NavigationalConnectivity:NavigationalEdges>
+            <rdf:Seq>
+              <rdf:li>0</rdf:li>
+              <rdf:li>1</rdf:li>
+              <rdf:li>1</rdf:li>
+              <rdf:li>0</rdf:li>
+            </rdf:Seq>
+          </NavigationalConnectivity:NavigationalEdges>
+        </Device:NavigationalConnectivity>
+      </Device>
+    </rdf:Description>
+  </rdf:RDF>
+</x:xmpmeta>

@@ -19,7 +19,7 @@
 #include <unordered_map>
 
 #include "xdmlib/dimension.h"
-#include "xdmlib/element.h"
+#include "xdmlib/imaging_model.h"
 #include "xdmlib/point.h"
 #include "xmpmeta/xml/deserializer.h"
 #include "xmpmeta/xml/serializer.h"
@@ -29,7 +29,7 @@ namespace xdm {
 
 // Implements the EquirectModel element in the XDM specification, with
 // serialization and deserialization.
-class EquirectModel : public Element {
+class EquirectModel : public ImagingModel {
  public:
   void GetNamespaces(
       std::unordered_map<string, string>* ns_name_href_map) override;
@@ -41,26 +41,26 @@ class EquirectModel : public Element {
   // The order of numbers in cropped_origin is (left, top).
   // The order of numbers in cropped_size is (cropped width, cropped height).
   // The order of numbers in full_size = (full width, full height).
-  static std::unique_ptr<EquirectModel>  FromData(const Point& cropped_origin,
-                                                  const Dimension& cropped_size,
-                                                  const Dimension& full_size);
+  static std::unique_ptr<EquirectModel> FromData(const Point& cropped_origin,
+                                                 const Dimension& cropped_size,
+                                                 const Dimension& full_size);
 
   // Returns the deserialized equirect model, null if parsing fails.
-  static std::unique_ptr<EquirectModel>
-      FromDeserializer(const xml::Deserializer& parent_deserializer);
+  static std::unique_ptr<EquirectModel> FromDeserializer(
+      const xml::Deserializer& parent_deserializer);
 
   // Getters.
   const Point& GetCroppedOrigin() const;
   const Dimension& GetCroppedSize() const;
   const Dimension& GetFullSize() const;
+  const char* GetType() const override;
 
   // Disallow copying.
   EquirectModel(const EquirectModel&) = delete;
   void operator=(const EquirectModel&) = delete;
 
  private:
-  EquirectModel(const Point& cropped_origin,
-                const Dimension& cropped_size,
+  EquirectModel(const Point& cropped_origin, const Dimension& cropped_size,
                 const Dimension& full_size);
 
   // Cropped origin coordinates.

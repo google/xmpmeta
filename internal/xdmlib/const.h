@@ -30,8 +30,11 @@ struct XdmConst {
   static const char* DevicePose();
   static const char* EquirectModel();
   static const char* Image();
+  static const char* Mesh();
+  static const char* NavigationalConnectivity();
   static const char* PointCloud();
   static const char* Profile();
+  static const char* VendorInfo();
 
   // XDM type names (not shared with elements).
   static const char* Cameras();

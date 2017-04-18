@@ -79,7 +79,6 @@ TEST(DeserializerImpl, CreateDeserializerNoChildNode) {
   xmlFreeNode(node);
 }
 
-
 TEST(DeserializerImpl, CreateDeserializerWithoutPrefixOnPrefixedNode) {
   const char* node_name = "NodeName";
   xmlNodePtr node = NewNode(nullptr, node_name);
@@ -112,7 +111,6 @@ TEST(DeserializerImpl, CreateDeserializerWithoutPrefixOnPrefixedNode) {
   xmlFreeNs(another_child_ns);
   xmlFreeNode(node);
 }
-
 
 TEST(DeserializerImpl, CreateDeserializerWithPrefixOnPrefixedNode) {
   const char* node_name = "NodeName";
@@ -253,22 +251,21 @@ TEST(DeserializerImpl, CreateDeserializerFromListElement) {
 
   // Test different indices.
   DeserializerImpl deserializer(node);
+  ASSERT_NE(
+      nullptr,
+      deserializer.CreateDeserializerFromListElementAt("Prefix", parent_name, 0)
+          .get());
   ASSERT_NE(nullptr,
-            deserializer.CreateDeserializerFromListElementAt("Prefix",
-                                                             parent_name,
-                                                             0).get());
-  ASSERT_NE(nullptr,
-            deserializer.CreateDeserializerFromListElementAt("",
-                                                             parent_name,
-                                                             0).get());
-  ASSERT_NE(nullptr,
-            deserializer.CreateDeserializerFromListElementAt("Prefix",
-                                                             parent_name,
-                                                             1).get());
-  ASSERT_NE(nullptr,
-            deserializer.CreateDeserializerFromListElementAt("Prefix",
-                                                             parent_name,
-                                                             2).get());
+            deserializer.CreateDeserializerFromListElementAt("", parent_name, 0)
+                .get());
+  ASSERT_NE(
+      nullptr,
+      deserializer.CreateDeserializerFromListElementAt("Prefix", parent_name, 1)
+          .get());
+  ASSERT_NE(
+      nullptr,
+      deserializer.CreateDeserializerFromListElementAt("Prefix", parent_name, 2)
+          .get());
 
   xmlFreeNs(parent_ns);
   xmlFreeNode(node);
@@ -322,10 +319,10 @@ TEST(DeserializerImpl, ParseDoubleArrayNoListElements) {
 }
 
 TEST(DeserializerImpl, ParseTwoArraysOfReals) {
-  const std::vector<double> expected_values_one = { 1.234, 5.678, 8.9011 };
+  const std::vector<double> expected_values_one = {1.234, 5.678, 8.9011};
   xmlNodePtr seq_node_one = RdfSeqNodeFromArray(expected_values_one);
 
-  const std::vector<double> expected_values_two = { 3.21, 5.291 };
+  const std::vector<double> expected_values_two = {3.21, 5.291};
   xmlNodePtr seq_node_two = RdfSeqNodeFromArray(expected_values_two);
 
   // Create and set parents of the rdf:Seq nodes.
@@ -352,12 +349,11 @@ TEST(DeserializerImpl, ParseTwoArraysOfReals) {
   EXPECT_EQ(expected_values_one, values);
 
   // Deserialize the second child node.
-  ASSERT_TRUE(deserializer.ParseDoubleArray("ChildTwoPrefix", child_two_name,
-                                            &values));
+  ASSERT_TRUE(
+      deserializer.ParseDoubleArray("ChildTwoPrefix", child_two_name, &values));
   EXPECT_EQ(expected_values_two, values);
   ASSERT_TRUE(deserializer.ParseDoubleArray("", child_two_name, &values));
   EXPECT_EQ(expected_values_two, values);
-
 
   // Clean up. This also frees all of the node's children.
   xmlFreeNs(node_ns);
@@ -389,15 +385,15 @@ TEST(DeserializerImpl, ParseTwoArraysOfInts) {
   // Deserialize the first child node.
   DeserializerImpl deserializer(node);
   std::vector<int> values;
-  ASSERT_FALSE(deserializer.ParseIntArray("NonexistentPrefix",
-                                          child_one_name, &values));
+  ASSERT_FALSE(
+      deserializer.ParseIntArray("NonexistentPrefix", child_one_name, &values));
   EXPECT_TRUE(values.empty());
   ASSERT_TRUE(deserializer.ParseIntArray("", child_one_name, &values));
   EXPECT_EQ(expected_values_one, values);
 
   // Deserialize the second child node.
-  ASSERT_TRUE(deserializer.ParseIntArray("ChildTwoPrefix", child_two_name,
-                                         &values));
+  ASSERT_TRUE(
+      deserializer.ParseIntArray("ChildTwoPrefix", child_two_name, &values));
   EXPECT_EQ(expected_values_two, values);
   ASSERT_TRUE(deserializer.ParseIntArray("", child_two_name, &values));
   EXPECT_EQ(expected_values_two, values);
@@ -594,7 +590,7 @@ TEST(DeserializerImpl, ParseStringPropertyNoPrefix) {
   string property_value("Value");
 
   xmlSetNsProp(node, nullptr, ToXmlChar(property_name.data()),
-             ToXmlChar(property_value.data()));
+               ToXmlChar(property_value.data()));
   DeserializerImpl deserializer(node);
 
   string value;
@@ -612,7 +608,7 @@ TEST(DeserializerImpl, ParseString) {
   string property_value("Value");
 
   xmlSetNsProp(node, node_ns, ToXmlChar(property_name.data()),
-             ToXmlChar(property_value.data()));
+               ToXmlChar(property_value.data()));
   DeserializerImpl deserializer(node);
 
   string value;
@@ -683,6 +679,58 @@ TEST(DeserializerImpl, ParseBase64) {
   ASSERT_TRUE(deserializer.ParseBase64("", property_name, &value));
   ASSERT_EQ(property_value, value);
 
+  xmlFreeNs(node_ns);
+  xmlFreeNode(node);
+}
+
+TEST(DeserializerImpl, ParseIntArrayBase64) {
+  const char* node_name = "NodeName";
+  xmlNsPtr node_ns = NewNamespace("http://somehref.com/", node_name);
+  xmlNodePtr node = NewNode(node_ns, node_name);
+  string property_name("Name");
+  std::vector<int> property_values;
+  for (int i = 0; i <= 100; i++) {
+    property_values.push_back(i);
+  }
+
+  string base64_encoded;
+  EncodeIntArrayBase64(property_values, &base64_encoded);
+  xmlSetNsProp(node, node_ns, ToXmlChar(property_name.data()),
+               ToXmlChar(base64_encoded.data()));
+  DeserializerImpl deserializer(node);
+
+  std::vector<int> values;
+  EXPECT_TRUE(
+      deserializer.ParseIntArrayBase64(node_name, property_name, values));
+  EXPECT_EQ(property_values, values);
+  EXPECT_TRUE(deserializer.ParseIntArrayBase64("", property_name, values));
+  EXPECT_EQ(property_values, values);
+  xmlFreeNs(node_ns);
+  xmlFreeNode(node);
+}
+
+TEST(DeserializerImpl, ParseFloatArrayBase64) {
+  const char* node_name = "NodeName";
+  xmlNsPtr node_ns = NewNamespace("http://somehref.com/", node_name);
+  xmlNodePtr node = NewNode(node_ns, node_name);
+  string property_name("Name");
+  std::vector<float> property_values;
+  for (int i = 0; i <= 100; i++) {
+    property_values.push_back(static_cast<float>(i));
+  }
+
+  string base64_encoded;
+  EncodeFloatArrayBase64(property_values, &base64_encoded);
+  xmlSetNsProp(node, node_ns, ToXmlChar(property_name.data()),
+               ToXmlChar(base64_encoded.data()));
+  DeserializerImpl deserializer(node);
+
+  std::vector<float> values;
+  EXPECT_TRUE(
+      deserializer.ParseFloatArrayBase64(node_name, property_name, values));
+  EXPECT_EQ(property_values, values);
+  EXPECT_TRUE(deserializer.ParseFloatArrayBase64("", property_name, values));
+  EXPECT_EQ(property_values, values);
 
   xmlFreeNs(node_ns);
   xmlFreeNode(node);
@@ -705,13 +753,11 @@ TEST(DeserializerImpl, ParseBoolean) {
   EXPECT_TRUE(deserializer.ParseBoolean("", property_name, &value));
   EXPECT_FALSE(value);
 
-
   // No prefix.
   xmlSetNsProp(node, nullptr, ToXmlChar(property_name.data()),
                ToXmlChar("false"));
   EXPECT_TRUE(deserializer.ParseBoolean("", property_name, &value));
   EXPECT_FALSE(value);
-
 
   // Uppercase.
   xmlSetNsProp(node, node_ns, ToXmlChar(property_name.data()),
@@ -721,7 +767,6 @@ TEST(DeserializerImpl, ParseBoolean) {
   EXPECT_TRUE(deserializer.ParseBoolean(node_name, property_name, &value));
   EXPECT_TRUE(value);
 
-
   // Camelcase.
   xmlSetNsProp(node, node_ns, ToXmlChar(property_name.data()),
                ToXmlChar("fALse"));
@@ -729,7 +774,6 @@ TEST(DeserializerImpl, ParseBoolean) {
   EXPECT_FALSE(value);
   EXPECT_TRUE(deserializer.ParseBoolean(node_name, property_name, &value));
   EXPECT_FALSE(value);
-
 
   // Some other string.
   xmlSetNsProp(node, node_ns, ToXmlChar(property_name.data()),

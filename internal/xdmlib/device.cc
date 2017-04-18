@@ -18,12 +18,17 @@
 
 #include "glog/logging.h"
 #include "xdmlib/const.h"
+#include "xdmlib/mesh.h"
+#include "xdmlib/navigational_connectivity.h"
+#include "xdmlib/vendor_info.h"
 #include "xmpmeta/xml/const.h"
 #include "xmpmeta/xml/deserializer_impl.h"
 #include "xmpmeta/xml/search.h"
 #include "xmpmeta/xml/serializer_impl.h"
 #include "xmpmeta/xml/utils.h"
+#include "xmpmeta/xmp_data.h"
 #include "xmpmeta/xmp_parser.h"
+#include "xmpmeta/xmp_writer.h"
 
 using xmpmeta::xml::DepthFirstSearch;
 using xmpmeta::xml::Deserializer;
@@ -47,10 +52,10 @@ const char kNamespaceHref[] = "http://ns.xdm.org/photos/1.0/device/";
 Device::Device() {}
 
 std::unique_ptr<Device> Device::FromData(
-    const string& revision,
-    std::unique_ptr<DevicePose> device_pose,
-    std::unique_ptr<Profiles> profiles,
-    std::unique_ptr<Cameras> cameras) {
+    const string& revision, std::unique_ptr<DevicePose> device_pose,
+    std::unique_ptr<Profiles> profiles, std::unique_ptr<Cameras> cameras,
+    std::unique_ptr<VendorInfo> vendor_info, std::unique_ptr<Mesh> mesh,
+    std::unique_ptr<NavigationalConnectivity> navigational_connectivity) {
   if (revision.empty()) {
     LOG(ERROR) << "Revision field cannot be empty";
     return nullptr;
@@ -64,6 +69,9 @@ std::unique_ptr<Device> Device::FromData(
   device->device_pose_ = std::move(device_pose);
   device->profiles_ = std::move(profiles);
   device->cameras_ = std::move(cameras);
+  device->vendor_info_ = std::move(vendor_info);
+  device->mesh_ = std::move(mesh);
+  device->navigational_connectivity_ = std::move(navigational_connectivity);
 
   return device;
 }
@@ -85,10 +93,30 @@ std::unique_ptr<Device> Device::FromJpegFile(const string& filename) {
   return FromXmp(xmp);
 }
 
+// Creates a Device by parsing XML file containing the metadata.
+std::unique_ptr<Device> Device::FromXmlFile(const string& filename) {
+  xmlDocPtr xmlDoc = xmlReadFile(filename.c_str(), NULL, 0);
+  if (xmlDoc == NULL) {
+    LOG(ERROR) << "Failed to read file: " << filename;
+    return nullptr;
+  }
+  std::unique_ptr<Device> device(new Device());
+  if (!device->ParseFields(xmlDoc)) {
+    return nullptr;
+  }
+  xmlFreeDoc(xmlDoc);
+  return device;
+}
+
 const string& Device::GetRevision() const { return revision_; }
 const Cameras* Device::GetCameras() const { return cameras_.get(); }
 const DevicePose* Device::GetDevicePose() const { return device_pose_.get(); }
 const Profiles* Device::GetProfiles() const { return profiles_.get(); }
+const VendorInfo* Device::GetVendorInfo() const { return vendor_info_.get(); }
+const Mesh* Device::GetMesh() const { return mesh_.get(); }
+const NavigationalConnectivity* Device::GetNavigationalConnectivity() const {
+  return navigational_connectivity_.get();
+}
 
 // This cannot be const because of memory management for the namespaces.
 // namespaces_ are freed when the XML document(s) in xmp are freed.
@@ -96,14 +124,25 @@ const Profiles* Device::GetProfiles() const { return profiles_.get(); }
 // object is serialized, freeing the xmlNs objects in the destructor will result
 // memory management errors.
 bool Device::SerializeToXmp(XmpData* xmp) {
-  if (xmp == nullptr || xmp->StandardSection() == nullptr
-      || xmp->ExtendedSection() == nullptr) {
+  if (xmp == nullptr || xmp->StandardSection() == nullptr ||
+      xmp->ExtendedSection() == nullptr) {
     LOG(ERROR) << "XmpData or its sections are null";
     return false;
   }
+  return Serialize(xmp->MutableExtendedSection());
+}
 
-  xmlNodePtr root_node =
-      GetFirstDescriptionElement(*xmp->MutableExtendedSection());
+bool Device::SerializeToXmlFile(const char* filename) {
+  std::unique_ptr<XmpData> xmp_data = CreateXmpData(true);
+  if (!Serialize(xmp_data->MutableExtendedSection())) {
+    return false;
+  }
+  return xmlSaveFile(filename, xmp_data->ExtendedSection()) != -1;
+}
+
+// Private methods.
+bool Device::Serialize(xmlDocPtr* xmlDoc) {
+  xmlNodePtr root_node = GetFirstDescriptionElement(*xmlDoc);
   if (root_node == nullptr) {
     LOG(ERROR) << "Extended section has no rdf:Description node";
     return false;
@@ -149,12 +188,37 @@ bool Device::SerializeToXmp(XmpData* xmp) {
     return false;
   }
 
+  if (vendor_info_) {
+    std::unique_ptr<Serializer> vendor_info_serializer =
+        device_serializer.CreateSerializer(XdmConst::Device(),
+                                           XdmConst::VendorInfo());
+    if (!vendor_info_->Serialize(vendor_info_serializer.get())) {
+      return false;
+    }
+  }
+
+  if (mesh_) {
+    std::unique_ptr<Serializer> mesh_serializer =
+        device_serializer.CreateSerializer(XdmConst::Device(),
+                                           XdmConst::Mesh());
+    if (!mesh_->Serialize(mesh_serializer.get())) {
+      return false;
+    }
+  }
+
+  if (navigational_connectivity_) {
+    std::unique_ptr<Serializer> navigational_connectivity_serializer =
+        device_serializer.CreateSerializer(
+            XdmConst::Device(), XdmConst::NavigationalConnectivity());
+    if (!navigational_connectivity_->Serialize(
+            navigational_connectivity_serializer.get())) {
+      return false;
+    }
+  }
+
   // TODO(miraleung): Add other elements here.
   return true;
 }
-
-
-// Private methods.
 void Device::GetNamespaces(
     std::unordered_map<string, string>* ns_name_href_map) const {
   if (ns_name_href_map == nullptr) {
@@ -172,6 +236,15 @@ void Device::GetNamespaces(
   if (cameras_) {
     cameras_->GetNamespaces(ns_name_href_map);
   }
+  if (vendor_info_) {
+    vendor_info_->GetNamespaces(ns_name_href_map);
+  }
+  if (mesh_) {
+    mesh_->GetNamespaces(ns_name_href_map);
+  }
+  if (navigational_connectivity_) {
+    navigational_connectivity_->GetNamespaces(ns_name_href_map);
+  }
 }
 
 bool Device::ParseFields(const XmpData& xmp) {
@@ -180,11 +253,14 @@ bool Device::ParseFields(const XmpData& xmp) {
     return false;
   }
 
+  return ParseFields(xmp.ExtendedSection());
+}
+
+bool Device::ParseFields(const xmlDocPtr& xmlDoc) {
   // Find and parse the Device node.
   // Only these two fields are required to be present; the rest are optional.
   // TODO(miraleung): Search for Device by namespace.
-  xmlNodePtr device_node =
-      DepthFirstSearch(xmp.ExtendedSection(), XdmConst::Device());
+  xmlNodePtr device_node = DepthFirstSearch(xmlDoc, XdmConst::Device());
   if (device_node == nullptr) {
     LOG(ERROR) << "No device node found";
     return false;
@@ -198,6 +274,10 @@ bool Device::ParseFields(const XmpData& xmp) {
   cameras_ = Cameras::FromDeserializer(deserializer);
   device_pose_ = DevicePose::FromDeserializer(deserializer);
   profiles_ = Profiles::FromDeserializer(deserializer);
+  vendor_info_ = VendorInfo::FromDeserializer(deserializer, XdmConst::Device());
+  mesh_ = Mesh::FromDeserializer(deserializer);
+  navigational_connectivity_ =
+      NavigationalConnectivity::FromDeserializer(deserializer);
 
   return true;
 }

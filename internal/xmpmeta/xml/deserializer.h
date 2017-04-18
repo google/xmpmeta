@@ -36,20 +36,21 @@ class Deserializer {
 
   // Returns a Deserializer.
   // child_name is the name of the next node to deserialize.
-  virtual std::unique_ptr<Deserializer>
-      CreateDeserializer(const string& prefix,
-                         const string& child_name) const = 0;
+  virtual std::unique_ptr<Deserializer> CreateDeserializer(
+      const string& prefix, const string& child_name) const = 0;
 
   // Returns a Deserializer from a list element node.
-  virtual std::unique_ptr<Deserializer>
-      CreateDeserializerFromListElementAt(const string& prefix,
-                                          const string& list_name,
-                                          int index) const = 0;
+  virtual std::unique_ptr<Deserializer> CreateDeserializerFromListElementAt(
+      const string& prefix, const string& list_name, int index) const = 0;
 
   // Parsers for properties with the given prefix.
   // Parses a node such as <NodeName Prefix:Name="Value" />
   virtual bool ParseBase64(const string& prefix, const string& name,
                            string* value) const = 0;
+  virtual bool ParseIntArrayBase64(const string& prefix, const string& name,
+                                   std::vector<int>& values) const = 0;
+  virtual bool ParseFloatArrayBase64(const string& prefix, const string& name,
+                                     std::vector<float>& values) const = 0;
   virtual bool ParseBoolean(const string& prefix, const string& name,
                             bool* value) const = 0;
   virtual bool ParseInt(const string& prefix, const string& name,

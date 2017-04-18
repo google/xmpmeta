@@ -36,4 +36,58 @@ bool EncodeBase64(const string& data, string* output) {
   return output->length() > 0;
 }
 
+// Base64-encodes the given int array.
+bool EncodeIntArrayBase64(const std::vector<int>& data, string* output) {
+  string bytes;
+  for (const auto& item : data) {
+    char buffer[sizeof(item)];
+    memcpy(buffer, &item, sizeof(item));
+    bytes.append(buffer, sizeof(buffer));
+  }
+  return EncodeBase64(bytes, output);
+}
+
+// Base64-decodes the given base64-encoded string.
+bool DecodeIntArrayBase64(const string& data, std::vector<int>& output) {
+  string bytes;
+  if (!DecodeBase64(data, &bytes)) {
+    return false;
+  }
+  const int count = bytes.size() / sizeof(int);
+  output.clear();
+  for (int i = 0; i < count; ++i) {
+    const int result = *reinterpret_cast<const int*>(
+        bytes.substr(i * sizeof(result), sizeof(result)).c_str());
+    output.push_back(result);
+  }
+  return !output.empty();
+}
+
+// Base64-encodes the given float array.
+bool EncodeFloatArrayBase64(const std::vector<float>& data, string* output) {
+  string bytes;
+  for (const auto& item : data) {
+    char buffer[sizeof(item)];
+    memcpy(buffer, &item, sizeof(item));
+    bytes.append(buffer, sizeof(buffer));
+  }
+  return EncodeBase64(bytes, output);
+}
+
+// Base64-decodes the given base64-encoded string.
+bool DecodeFloatArrayBase64(const string& data, std::vector<float>& output) {
+  string bytes;
+  if (!DecodeBase64(data, &bytes)) {
+    return false;
+  }
+  const int count = bytes.size() / sizeof(float);
+  output.clear();
+  for (int i = 0; i < count; ++i) {
+    const float result = *reinterpret_cast<const float*>(
+        bytes.substr(i * sizeof(result), sizeof(result)).c_str());
+    output.push_back(result);
+  }
+  return !output.empty();
+}
+
 }  // namespace xmpmeta

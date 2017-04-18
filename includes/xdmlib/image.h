@@ -43,15 +43,17 @@ class Image : public Element {
   bool Serialize(xml::Serializer* serializer) const override;
 
   // Creates an Image from the given fields. Returns null if
-  // either field is empty. The fields are copied to the new object.
-  // Data is NOT base64-encoded, and is the image data of the right eye.
-  // Mime is the mimetype of the image data.
-  static std::unique_ptr<Image> FromData(const string& data,
-                                         const string& mime);
+  // mime field is empty, or if both data and image_id are provided, or if
+  // neither data nor image_id is provided. The fields are copied to the new
+  // object. Data is NOT base64-encoded, and is the image data of the right eye.
+  // Mime is the mimetype of the image data. ImageId is an unique image
+  // identifier which points to an external file.
+  static std::unique_ptr<Image> FromData(const string& data, const string& mime,
+                                         const string& image_id);
 
   // Returns the deserialized Image; null if parsing fails.
-  static std::unique_ptr<Image>
-      FromDeserializer(const xml::Deserializer& parent_deserializer);
+  static std::unique_ptr<Image> FromDeserializer(
+      const xml::Deserializer& parent_deserializer);
 
   // Returns the Image data, which has been base-64 decoded but is still
   // encoded according to the mime type of the Image.
@@ -59,6 +61,9 @@ class Image : public Element {
 
   // Returns the Image mime type.
   const string& GetMime() const;
+
+  // Returns the Image id, which points to an external image.
+  const string& GetImageId() const;
 
   // Disallow copying.
   Image(const Image&) = delete;
@@ -72,6 +77,14 @@ class Image : public Element {
 
   string data_;  // The raw data, i.e. not base64-encoded.
   string mime_;
+
+  // The unique image id. image_id_ instead of data_ needs to be provided for
+  // PosedCollection profile. This allows images to be stored outside the
+  // metadata, which help reduce the size of the metadata file. data_ needs to
+  // be provided for all other cases and there is no case where both need to be
+  // provided. The XDM specification at www.xdm.org will be updated to
+  // reflect this change.
+  string image_id_;
 };
 
 }  // namespace xdm

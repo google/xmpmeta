@@ -21,9 +21,12 @@ set(XDMLIB_INTERNAL_SRC
     device_pose.cc
     equirect_model.cc
     image.cc
+    mesh.cc
+    navigational_connectivity.cc
     point_cloud.cc
     profile.cc
     profiles.cc
+    vendor_info.cc
 )
 
 # Heuristic for determining LIB_SUFFIX. FHS recommends that 64-bit systems
@@ -175,8 +178,11 @@ if (BUILD_TESTING AND GFLAGS)
   xdmlib_test(device_pose)
   xdmlib_test(equirect_model)
   xdmlib_test(image)
+  xdmlib_test(mesh)
+  xdmlib_test(navigational_connectivity)
   xdmlib_test(point_cloud)
   xdmlib_test(profile)
   xdmlib_test(profiles)
+  xdmlib_test(vendor_info)
 
  endif (BUILD_TESTING AND GFLAGS)

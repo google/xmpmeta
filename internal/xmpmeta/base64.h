@@ -15,7 +15,9 @@
 #ifndef XMPMETA_BASE64_H_
 #define XMPMETA_BASE64_H_
 
+#include <iostream>
 #include <string>
+#include <vector>
 
 #include "base/port.h"
 
@@ -28,6 +30,18 @@ bool DecodeBase64(const string& data, string* output);
 // Base64-encodes the given string.
 bool EncodeBase64(const string& data, string* output);
 
-}  // namespace meta
+// Base64-encodes the given int array.
+bool EncodeIntArrayBase64(const std::vector<int>& data, string* output);
+
+// Base64-decodes the given int array.
+bool DecodeIntArrayBase64(const string& data, std::vector<int>& output);
+
+// Base64-encodes the given float array.
+bool EncodeFloatArrayBase64(const std::vector<float>& data, string* output);
+
+// Base64-decodes the given float array.
+bool DecodeFloatArrayBase64(const string& data, std::vector<float>& output);
+
+}  // namespace xmpmeta
 
 #endif  // XMPMETA_BASE64_H_

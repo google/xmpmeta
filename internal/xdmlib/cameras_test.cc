@@ -27,12 +27,12 @@
 #include "xmpmeta/base64.h"
 #include "xmpmeta/file.h"
 #include "xmpmeta/test_util.h"
-#include "xmpmeta/xmp_data.h"
-#include "xmpmeta/xmp_writer.h"
 #include "xmpmeta/xml/const.h"
 #include "xmpmeta/xml/deserializer_impl.h"
 #include "xmpmeta/xml/serializer_impl.h"
 #include "xmpmeta/xml/utils.h"
+#include "xmpmeta/xmp_data.h"
+#include "xmpmeta/xmp_writer.h"
 
 using xmpmeta::xml::Deserializer;
 using xmpmeta::xml::DeserializerImpl;
@@ -63,14 +63,13 @@ xmlNodePtr NewNode(xmlNsPtr xml_ns, const string& node_name) {
 
 // Convenience function for creating an XML namespace.
 xmlNsPtr NewNs(const string& href, const string& ns_name) {
-  return xmlNewNs(nullptr,
-                  href.empty() ? nullptr : ToXmlChar(href.data()),
+  return xmlNewNs(nullptr, href.empty() ? nullptr : ToXmlChar(href.data()),
                   ToXmlChar(ns_name.data()));
 }
 
 std::unique_ptr<Camera> CreateCamera() {
   std::unique_ptr<Audio> audio = Audio::FromData(kMediaData, "audio/mp4");
-  return Camera::FromData(std::move(audio), nullptr, nullptr);
+  return Camera::FromData(std::move(audio), nullptr, nullptr, nullptr, nullptr);
 }
 
 TEST(Cameras, GetNamespaces) {
@@ -228,8 +227,7 @@ TEST(Cameras, ReadMetadata) {
 
   // rdf:Seq node.
   xmlNsPtr rdf_ns = NewNs("http://fakeh.ref", XmlConst::RdfPrefix());
-  xmlNodePtr rdf_seq_node =
-      xmlNewNode(rdf_ns, ToXmlChar(XmlConst::RdfSeq()));
+  xmlNodePtr rdf_seq_node = xmlNewNode(rdf_ns, ToXmlChar(XmlConst::RdfSeq()));
   xmlAddChild(cameras_node, rdf_seq_node);
 
   // Set up minimal Camera nodes.
@@ -248,8 +246,7 @@ TEST(Cameras, ReadMetadata) {
                  ToXmlChar(audio_mime));
     xmlSetNsProp(audio_node, audio_ns, ToXmlChar("Data"),
                  ToXmlChar(base64_encoded.data()));
-    xmlNodePtr rdf_li_node =
-        xmlNewNode(rdf_ns, ToXmlChar(XmlConst::RdfLi()));
+    xmlNodePtr rdf_li_node = xmlNewNode(rdf_ns, ToXmlChar(XmlConst::RdfLi()));
 
     xmlAddChild(camera_node, audio_node);
     xmlAddChild(rdf_li_node, camera_node);

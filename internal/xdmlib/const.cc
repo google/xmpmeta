@@ -28,8 +28,11 @@ const char kDevice[] = "Device";
 const char kDevicePose[] = "DevicePose";
 const char kEquirectModel[] = "EquirectModel";
 const char kImage[] = "Image";
+const char kMesh[] = "Mesh";
+const char kNavigationalConnectivity[] = "NavigationalConnectivity";
 const char kPointCloud[] = "PointCloud";
 const char kProfile[] = "Profile";
+const char kVendorInfo[] = "VendorInfo";
 
 // Type names.
 const char kCameras[] = "Cameras";
@@ -39,54 +42,38 @@ const char kProfiles[] = "Profiles";
 }  // namespace
 
 // XDM element names.
-const char* XdmConst::Audio() {
-  return kAudio;
+const char* XdmConst::Audio() { return kAudio; }
+
+const char* XdmConst::Camera() { return kCamera; }
+
+const char* XdmConst::CameraPose() { return kCameraPose; }
+
+const char* XdmConst::Device() { return kDevice; }
+
+const char* XdmConst::DevicePose() { return kDevicePose; }
+
+const char* XdmConst::EquirectModel() { return kEquirectModel; }
+
+const char* XdmConst::Image() { return kImage; }
+
+const char* XdmConst::Mesh() { return kMesh; }
+
+const char* XdmConst::NavigationalConnectivity() {
+  return kNavigationalConnectivity;
 }
 
-const char* XdmConst::Camera() {
-  return kCamera;
-}
+const char* XdmConst::PointCloud() { return kPointCloud; }
 
-const char* XdmConst::CameraPose() {
-  return kCameraPose;
-}
+const char* XdmConst::Profile() { return kProfile; }
 
-const char* XdmConst::Device() {
-  return kDevice;
-}
-
-const char* XdmConst::DevicePose() {
-  return kDevicePose;
-}
-
-const char* XdmConst::EquirectModel() {
-  return kEquirectModel;
-}
-
-const char* XdmConst::Image() {
-  return kImage;
-}
-
-const char* XdmConst::PointCloud() {
-  return kPointCloud;
-}
-
-const char* XdmConst::Profile() {
-  return kProfile;
-}
+const char* XdmConst::VendorInfo() { return kVendorInfo; }
 
 // XDM type names.
-const char* XdmConst::Cameras() {
-  return kCameras;
-}
+const char* XdmConst::Cameras() { return kCameras; }
 
-const char* XdmConst::ImagingModel() {
-  return kImagingModel;
-}
+const char* XdmConst::ImagingModel() { return kImagingModel; }
 
-const char* XdmConst::Profiles() {
-  return kProfiles;
-}
+const char* XdmConst::Profiles() { return kProfiles; }
 
 // Returns the namespace to which the given XDM element or type belongs.
 const string XdmConst::Namespace(const string& node_name) {
@@ -97,7 +84,8 @@ const string XdmConst::Namespace(const string& node_name) {
     return kCamera;
   }
   if (node_name == kCamera || node_name == kDevicePose ||
-      node_name == kProfile) {
+      node_name == kProfile || node_name == kMesh ||
+      node_name == kNavigationalConnectivity) {
     return kDevice;
   }
 
@@ -110,7 +98,6 @@ const string XdmConst::Namespace(const string& node_name) {
   }
   return "";
 }
-
 
 }  // namespace xdm
 }  // namespace xmpmeta

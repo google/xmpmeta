@@ -66,9 +66,10 @@ std::unique_ptr<EquirectModel> ParseFields(const Deserializer& deserializer) {
 // Private constructor.
 EquirectModel::EquirectModel(const Point& cropped_origin,
                              const Dimension& cropped_size,
-                             const Dimension& full_size) :
-  cropped_origin_(cropped_origin), cropped_size_(cropped_size),
-  full_size_(full_size) {}
+                             const Dimension& full_size)
+    : cropped_origin_(cropped_origin),
+      cropped_size_(cropped_size),
+      full_size_(full_size) {}
 
 // Public methods.
 void EquirectModel::GetNamespaces(
@@ -81,16 +82,15 @@ void EquirectModel::GetNamespaces(
   ns_name_href_map->emplace(kPropertyPrefix, kNamespaceHref);
 }
 
-std::unique_ptr<EquirectModel>
-EquirectModel::FromData(const Point& cropped_origin,
-                        const Dimension& cropped_size,
-                        const Dimension& full_size) {
+std::unique_ptr<EquirectModel> EquirectModel::FromData(
+    const Point& cropped_origin, const Dimension& cropped_size,
+    const Dimension& full_size) {
   return std::unique_ptr<EquirectModel>(
       new EquirectModel(cropped_origin, cropped_size, full_size));
 }
 
-std::unique_ptr<EquirectModel>
-EquirectModel::FromDeserializer(const Deserializer& parent_deserializer) {
+std::unique_ptr<EquirectModel> EquirectModel::FromDeserializer(
+    const Deserializer& parent_deserializer) {
   std::unique_ptr<Deserializer> deserializer =
       parent_deserializer.CreateDeserializer(
           XdmConst::Namespace(kPropertyPrefix), kPropertyPrefix);
@@ -100,14 +100,13 @@ EquirectModel::FromDeserializer(const Deserializer& parent_deserializer) {
   return ParseFields(*deserializer);
 }
 
-const Point&
-EquirectModel::GetCroppedOrigin() const { return cropped_origin_; }
+const Point& EquirectModel::GetCroppedOrigin() const { return cropped_origin_; }
 
-const Dimension&
-EquirectModel::GetCroppedSize() const { return cropped_size_; }
+const Dimension& EquirectModel::GetCroppedSize() const { return cropped_size_; }
 
-const Dimension&
-EquirectModel::GetFullSize() const { return full_size_; }
+const Dimension& EquirectModel::GetFullSize() const { return full_size_; }
+
+const char* EquirectModel::GetType() const { return XdmConst::EquirectModel(); }
 
 bool EquirectModel::Serialize(Serializer* serializer) const {
   if (serializer == nullptr) {

@@ -44,11 +44,19 @@ void Camera::GetNamespaces(
   if (camera_pose_) {
     camera_pose_->GetNamespaces(ns_name_href_map);
   }
+  if (vendor_info_) {
+    vendor_info_->GetNamespaces(ns_name_href_map);
+  }
+  if (imaging_model_) {
+    imaging_model_->GetNamespaces(ns_name_href_map);
+  }
 }
 
-std::unique_ptr<Camera>
-Camera::FromData(std::unique_ptr<Audio> audio, std::unique_ptr<Image> image,
-                 std::unique_ptr<CameraPose> camera_pose) {
+std::unique_ptr<Camera> Camera::FromData(
+    std::unique_ptr<Audio> audio, std::unique_ptr<Image> image,
+    std::unique_ptr<CameraPose> camera_pose,
+    std::unique_ptr<VendorInfo> vendor_info,
+    std::unique_ptr<ImagingModel> imaging_model) {
   // TODO(miraleung): Add restrictive checks here for required elements
   // once all they are all checked in. Remove this check.
   if (audio == nullptr && image == nullptr) {
@@ -59,11 +67,14 @@ Camera::FromData(std::unique_ptr<Audio> audio, std::unique_ptr<Image> image,
   camera->audio_ = std::move(audio);
   camera->image_ = std::move(image);
   camera->camera_pose_ = std::move(camera_pose);
+  camera->vendor_info_ = std::move(vendor_info);
+  camera->imaging_model_ = std::move(imaging_model);
+
   return camera;
 }
 
-std::unique_ptr<Camera>
-Camera::FromDeserializer(const Deserializer& parent_deserializer) {
+std::unique_ptr<Camera> Camera::FromDeserializer(
+    const Deserializer& parent_deserializer) {
   std::unique_ptr<Deserializer> deserializer =
       parent_deserializer.CreateDeserializer(
           XdmConst::Namespace(XdmConst::Camera()), XdmConst::Camera());
@@ -80,6 +91,10 @@ Camera::FromDeserializer(const Deserializer& parent_deserializer) {
 const Audio* Camera::GetAudio() const { return audio_.get(); }
 const Image* Camera::GetImage() const { return image_.get(); }
 const CameraPose* Camera::GetCameraPose() const { return camera_pose_.get(); }
+const VendorInfo* Camera::GetVendorInfo() const { return vendor_info_.get(); }
+const ImagingModel* Camera::GetImagingModel() const {
+  return imaging_model_.get();
+}
 
 bool Camera::Serialize(Serializer* serializer) const {
   if (serializer == nullptr) {
@@ -91,15 +106,13 @@ bool Camera::Serialize(Serializer* serializer) const {
   // successfully serialized.
   bool success = false;
   if (audio_ != nullptr) {
-    std::unique_ptr<Serializer> audio_serializer =
-        serializer->CreateSerializer(
-            XdmConst::Namespace(XdmConst::Audio()), XdmConst::Audio());
+    std::unique_ptr<Serializer> audio_serializer = serializer->CreateSerializer(
+        XdmConst::Namespace(XdmConst::Audio()), XdmConst::Audio());
     success |= audio_->Serialize(audio_serializer.get());
   }
   if (image_ != nullptr) {
-    std::unique_ptr<Serializer> image_serializer =
-        serializer->CreateSerializer(
-            XdmConst::Namespace(XdmConst::Image()), XdmConst::Image());
+    std::unique_ptr<Serializer> image_serializer = serializer->CreateSerializer(
+        XdmConst::Namespace(XdmConst::Image()), XdmConst::Image());
     success |= image_->Serialize(image_serializer.get());
   }
 
@@ -114,6 +127,21 @@ bool Camera::Serialize(Serializer* serializer) const {
             XdmConst::Namespace(XdmConst::CameraPose()),
             XdmConst::CameraPose());
     success &= camera_pose_->Serialize(camera_pose_serializer.get());
+  }
+
+  if (vendor_info_ != nullptr) {
+    std::unique_ptr<Serializer> vendor_info_serializer =
+        serializer->CreateSerializer(XdmConst::Camera(),
+                                     XdmConst::VendorInfo());
+    success &= vendor_info_->Serialize(vendor_info_serializer.get());
+  }
+
+  if (imaging_model_ != nullptr) {
+    std::unique_ptr<Serializer> imaging_model_serializer =
+        serializer->CreateSerializer(
+            XdmConst::Namespace(imaging_model_->GetType()),
+            imaging_model_->GetType());
+    success &= imaging_model_->Serialize(imaging_model_serializer.get());
   }
 
   return success;
@@ -151,6 +179,18 @@ bool Camera::ParseChildElements(const Deserializer& deserializer) {
     camera_pose_ = std::move(camera_pose);
   }
 
+  std::unique_ptr<VendorInfo> vendor_info =
+      VendorInfo::FromDeserializer(deserializer, XdmConst::Camera());
+  if (vendor_info.get()) {
+    vendor_info_ = std::move(vendor_info);
+  }
+
+  std::unique_ptr<EquirectModel> equirect_model =
+      EquirectModel::FromDeserializer(deserializer);
+  if (equirect_model != nullptr) {
+    imaging_model_ = std::move(equirect_model);
+  }
+  // TODO(hlou): Add other imaging models.
   return success;
 }
 

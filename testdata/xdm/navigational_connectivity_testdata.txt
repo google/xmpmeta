@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Device>
+  <Device:NavigationalConnectivity>
+    <NavigationalConnectivity:NavigationalEdges>
+      <rdf:Seq>
+        <rdf:li>0</rdf:li>
+        <rdf:li>1</rdf:li>
+        <rdf:li>1</rdf:li>
+        <rdf:li>0</rdf:li>
+      </rdf:Seq>
+    </NavigationalConnectivity:NavigationalEdges>
+  </Device:NavigationalConnectivity>
+</Device>

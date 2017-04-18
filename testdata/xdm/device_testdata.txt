@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP">
   <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-    <rdf:Description xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:Device="http://ns.xdm.org/photos/1.0/device/" xmlns:DevicePose="http://ns.xdm.org/photos/1.0/devicepose/" xmlns:Profile="http://ns.xdm.org/photos/1.0/profile/" xmlns:Audio="http://ns.xdm.org/photos/1.0/audio/" xmlns:Camera="http://ns.xdm.org/photos/1.0/camera/" rdf:about="">
-      <Device Device:Revision="1.01">
+    <rdf:Description xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:Device="http://ns.xdm.org/photos/1.0/device/" xmlns:Mesh="http://ns.xdm.org/photos/1.0/mesh/" xmlns:DevicePose="http://ns.xdm.org/photos/1.0/devicepose/" xmlns:Profile="http://ns.xdm.org/photos/1.0/profile/" xmlns:Audio="http://ns.xdm.org/photos/1.0/audio/" xmlns:NavigationalConnectivity="http://ns.xdm.org/photos/1.0/navigationalconnectivity/" xmlns:Camera="http://ns.xdm.org/photos/1.0/camera/" xmlns:VendorInfo="http://ns.xdm.org/photos/1.0/vendorinfo/" rdf:about="">
+      <Device Device:Revision="1.02">
         <Device:DevicePose DevicePose:Latitude="-85.320000" DevicePose:Longitude="-135.203410" DevicePose:Altitude="1.203000" DevicePose:Timestamp="0"/>
         <Device:Profiles>
           <rdf:Seq>
@@ -37,6 +37,18 @@
             </rdf:li>
           </rdf:Seq>
         </Device:Cameras>
+        <Device:VendorInfo VendorInfo:Manufacturer="manufacturer_1" VendorInfo:Model="model_1" VendorInfo:Notes="notes_1"/>
+        <Device:Mesh Mesh:VertexCount="4" Mesh:VertexPosition="AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAIA/" Mesh:FaceCount="4" Mesh:FaceIndices="AAAAAAEAAAACAAAAAAAAAAEAAAADAAAAAAAAAAMAAAACAAAAAQAAAAIAAAADAAAA" Mesh:Metric="false" Mesh:Software="software"/>
+        <Device:NavigationalConnectivity>
+          <NavigationalConnectivity:NavigationalEdges>
+            <rdf:Seq>
+              <rdf:li>0</rdf:li>
+              <rdf:li>1</rdf:li>
+              <rdf:li>1</rdf:li>
+              <rdf:li>0</rdf:li>
+            </rdf:Seq>
+          </NavigationalConnectivity:NavigationalEdges>
+        </Device:NavigationalConnectivity>
       </Device>
     </rdf:Description>
   </rdf:RDF>

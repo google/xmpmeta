@@ -27,6 +27,7 @@ namespace {
 
 const char kMime[] = "Mime";
 const char kData[] = "Data";
+const char kImageId[] = "ImageId";
 
 const char kNamespaceHref[] = "http://ns.xdm.org/photos/1.0/image/";
 
@@ -45,20 +46,25 @@ void Image::GetNamespaces(
   ns_name_href_map->emplace(XdmConst::Image(), kNamespaceHref);
 }
 
-std::unique_ptr<Image> Image::FromData(const string& data,
-                                             const string& mime) {
-  if (data.empty() || mime.empty()) {
-    LOG(ERROR) << "No image data or mimetype given";
+std::unique_ptr<Image> Image::FromData(const string& data, const string& mime,
+                                       const string& image_id) {
+  if ((data.empty() && image_id.empty()) || mime.empty()) {
+    LOG(ERROR) << "No image data/id or mimetype given";
+    return nullptr;
+  }
+  if (!data.empty() && !image_id.empty()) {
+    LOG(ERROR) << "Either image data or id is needed, not both";
     return nullptr;
   }
   std::unique_ptr<Image> image(new Image());
   image->data_ = data;
   image->mime_ = mime;
+  image->image_id_ = image_id;
   return image;
 }
 
-std::unique_ptr<Image>
-Image::FromDeserializer(const Deserializer& parent_deserializer) {
+std::unique_ptr<Image> Image::FromDeserializer(
+    const Deserializer& parent_deserializer) {
   std::unique_ptr<Deserializer> deserializer =
       parent_deserializer.CreateDeserializer(
           XdmConst::Namespace(XdmConst::Image()), XdmConst::Image());
@@ -76,19 +82,28 @@ const string& Image::GetData() const { return data_; }
 
 const string& Image::GetMime() const { return mime_; }
 
+const string& Image::GetImageId() const { return image_id_; }
+
 bool Image::Serialize(Serializer* serializer) const {
   if (serializer == nullptr) {
     LOG(ERROR) << "Serializer is null";
     return false;
   }
-  string base64_encoded;
-  if (!EncodeBase64(data_, &base64_encoded)) {
-    return false;
-  }
+
   if (!serializer->WriteProperty(XdmConst::Image(), kMime, mime_)) {
     return false;
   }
-  return serializer->WriteProperty(XdmConst::Image(), kData, base64_encoded);
+  if (!data_.empty()) {
+    string base64_encoded;
+    if (!EncodeBase64(data_, &base64_encoded)) {
+      return false;
+    }
+    return serializer->WriteProperty(XdmConst::Image(), kData, base64_encoded);
+  }
+  if (!image_id_.empty()) {
+    return serializer->WriteProperty(XdmConst::Image(), kImageId, image_id_);
+  }
+  return false;
 }
 
 // Private methods.
@@ -96,7 +111,9 @@ bool Image::ParseImageFields(const Deserializer& deserializer) {
   if (!deserializer.ParseString(XdmConst::Image(), kMime, &mime_)) {
     return false;
   }
-  return deserializer.ParseBase64(XdmConst::Image(), kData , &data_);
+
+  return (deserializer.ParseString(XdmConst::Image(), kImageId, &image_id_) ||
+          deserializer.ParseBase64(XdmConst::Image(), kData, &data_));
 }
 
 }  // namespace xdm

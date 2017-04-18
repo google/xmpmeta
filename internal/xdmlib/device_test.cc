@@ -22,13 +22,17 @@
 #include <vector>
 
 #include "gmock/gmock.h"
+#include "strings/numbers.h"
 #include "xdmlib/audio.h"
 #include "xdmlib/camera.h"
 #include "xdmlib/cameras.h"
 #include "xdmlib/const.h"
 #include "xdmlib/device_pose.h"
+#include "xdmlib/mesh.h"
+#include "xdmlib/navigational_connectivity.h"
 #include "xdmlib/profile.h"
 #include "xdmlib/profiles.h"
+#include "xdmlib/vendor_info.h"
 #include "xmpmeta/base64.h"
 #include "xmpmeta/file.h"
 #include "xmpmeta/test_util.h"
@@ -55,11 +59,44 @@ namespace {
 
 // Test data constants.
 const char kDeviceDataPath[] = "xdm/device_testdata.txt";
+const char kDeviceDataPosedCollectionPath[] =
+    "xdm/device_testdata_posedcollection.xml";
 const char kMediaData[] = "123ABC456DEF";
 
-const double kLat = -85.32;
-const double kLon = -135.20341;
-const double kAlt = 1.203;
+// Device pose
+const double kDeviceLat = -85.32;
+const double kDeviceLon = -135.20341;
+const double kDeviceAlt = 1.203;
+
+// Vendor info.
+const string manufacturer = "manufacturer_1";
+const string model = "model_1";
+const string notes = "notes_1";
+
+// Camera pose.
+const double kCameraRotationAxisX = 0.37139105566446701;
+const double kCameraRotationAxisY = 0.7427811113287841;
+const double kCameraRotationAxisZ = 0.55708608349662558;
+const double kCameraRotationAngle = 1.57;
+
+// Number of cameras.
+const int kCameraNum = 3;
+
+// Image
+const char kImageMime[] = "image/jpeg";
+const char kImageId[] = "unique_image_id";
+
+// Mesh with 4 vertices and 4 faces.
+const int kVertexCount = 4;
+const std::vector<float> kVertexPosition{0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+                                         0.0, 1.0, 0.0, 0.0, 0.0, 1.0};
+const int kFaceCount = 4;
+const std::vector<int> kFaceIndices{0, 1, 2, 0, 1, 3, 0, 3, 2, 1, 2, 3};
+const char kSoftware[] = "software";
+
+// NavigationalConnectivity with 2 navigational edges from image 0 to image 1
+// and from image 1 to image 0.
+const std::vector<int> kNavigationalEdges{0, 1, 1, 0};
 
 // Convenience function for creating an XML node.
 xmlNodePtr NewNode(const xmlNsPtr xml_ns, const string& node_name) {
@@ -68,9 +105,20 @@ xmlNodePtr NewNode(const xmlNsPtr xml_ns, const string& node_name) {
 
 // Convenience function for creating an XML namespace.
 xmlNsPtr NewNs(const string& href, const string& ns_name) {
-  return xmlNewNs(nullptr,
-                  href.empty() ? nullptr : ToXmlChar(href.data()),
+  return xmlNewNs(nullptr, href.empty() ? nullptr : ToXmlChar(href.data()),
                   ToXmlChar(ns_name.data()));
+}
+
+// Returns an XML rdf:Seq node with a list of the given values.
+xmlNodePtr SetupRdfSeqOfIndices(const std::vector<int>& values) {
+  xmlNsPtr rdf_ns = NewNs("http://fakeh.ref", XmlConst::RdfPrefix());
+  xmlNodePtr rdf_seq_node = xmlNewNode(rdf_ns, ToXmlChar(XmlConst::RdfSeq()));
+  for (int i = 0; i < values.size(); i++) {
+    xmlNodePtr rdf_li_node = xmlNewNode(rdf_ns, ToXmlChar(XmlConst::RdfLi()));
+    xmlNodeSetContent(rdf_li_node, ToXmlChar(std::to_string(values[i]).data()));
+    xmlAddChild(rdf_seq_node, rdf_li_node);
+  }
+  return rdf_seq_node;
 }
 
 std::unique_ptr<Audio> CreateAudio() {
@@ -79,11 +127,12 @@ std::unique_ptr<Audio> CreateAudio() {
 
 std::unique_ptr<Camera> CreateCamera() {
   std::unique_ptr<Audio> audio = CreateAudio();
-  return Camera::FromData(std::move(audio), nullptr, nullptr);
+  return Camera::FromData(std::move(audio), nullptr, nullptr, nullptr, nullptr);
 }
 
 std::unique_ptr<DevicePose> CreateDevicePose() {
-  return DevicePose::FromData({kLat, kLon, kAlt}, std::vector<double>(), 0);
+  return DevicePose::FromData({kDeviceLat, kDeviceLon, kDeviceAlt},
+                              std::vector<double>(), 0);
 }
 
 std::unique_ptr<Profile> CreateVrPhotoProfile() {
@@ -96,16 +145,26 @@ std::unique_ptr<Profiles> CreateProfiles() {
   return Profiles::FromProfileArray(&profile_list);
 }
 
+std::unique_ptr<VendorInfo> CreateVendorInfo() {
+  return VendorInfo::FromData(manufacturer, model, notes);
+}
+
+std::unique_ptr<Mesh> CreateMesh() {
+  return Mesh::FromData(kVertexCount, kVertexPosition, kFaceCount, kFaceIndices,
+                        false, kSoftware);
+}
+
+std::unique_ptr<NavigationalConnectivity> CreateNavigationalConnectivity() {
+  return NavigationalConnectivity::FromData(kNavigationalEdges);
+}
+
 // Returns an XML rdf:Seq node with a list of the given values.
 xmlNodePtr SetupRdfSeqOfIndices(const std::vector<int>& values,
                                 const xmlNsPtr rdf_ns) {
-  xmlNodePtr rdf_seq_node =
-      xmlNewNode(rdf_ns, ToXmlChar(XmlConst::RdfSeq()));
+  xmlNodePtr rdf_seq_node = xmlNewNode(rdf_ns, ToXmlChar(XmlConst::RdfSeq()));
   for (int value : values) {
-    xmlNodePtr rdf_li_node =
-        xmlNewNode(rdf_ns, ToXmlChar(XmlConst::RdfLi()));
-    xmlNodeSetContent(
-        rdf_li_node, ToXmlChar(std::to_string(value).data()));
+    xmlNodePtr rdf_li_node = xmlNewNode(rdf_ns, ToXmlChar(XmlConst::RdfLi()));
+    xmlNodeSetContent(rdf_li_node, ToXmlChar(std::to_string(value).data()));
     xmlAddChild(rdf_seq_node, rdf_li_node);
   }
   return rdf_seq_node;
@@ -134,18 +193,29 @@ TEST(Device, FromData) {
   std::unique_ptr<Profiles> profiles = CreateProfiles();
   ASSERT_NE(nullptr, profiles);
 
+  std::unique_ptr<VendorInfo> vendor_info = CreateVendorInfo();
+  ASSERT_NE(nullptr, vendor_info);
+
+  std::unique_ptr<Mesh> mesh = CreateMesh();
+  ASSERT_NE(nullptr, mesh);
+
+  std::unique_ptr<NavigationalConnectivity> navigational_connectivity =
+      CreateNavigationalConnectivity();
+  ASSERT_NE(nullptr, navigational_connectivity);
+
   std::unique_ptr<Device> device =
-      Device::FromData("1.01", std::move(device_pose), std::move(profiles),
-                       std::move(cameras));
+      Device::FromData("1.02", std::move(device_pose), std::move(profiles),
+                       std::move(cameras), std::move(vendor_info),
+                       std::move(mesh), std::move(navigational_connectivity));
   ASSERT_NE(nullptr, device);
 
   const DevicePose* read_device_pose = device->GetDevicePose();
   ASSERT_NE(nullptr, read_device_pose);
   const std::vector<double>& position = read_device_pose->GetPosition();
   EXPECT_EQ(3, position.size());
-  EXPECT_DOUBLE_EQ(kLat, position[0]);
-  EXPECT_DOUBLE_EQ(kLon, position[1]);
-  EXPECT_DOUBLE_EQ(kAlt, position[2]);
+  EXPECT_DOUBLE_EQ(kDeviceLat, position[0]);
+  EXPECT_DOUBLE_EQ(kDeviceLon, position[1]);
+  EXPECT_DOUBLE_EQ(kDeviceAlt, position[2]);
   EXPECT_EQ(0, read_device_pose->GetOrientationRotationXYZAngle().size());
 
   const Profiles* read_profiles = device->GetProfiles();
@@ -169,21 +239,43 @@ TEST(Device, FromData) {
     EXPECT_EQ(audio->GetMime(), read_audio->GetMime());
     EXPECT_EQ(audio->GetData(), read_audio->GetData());
   }
+
+  const VendorInfo* read_vendor_info = device->GetVendorInfo();
+  ASSERT_NE(nullptr, read_vendor_info);
+  EXPECT_EQ(manufacturer, read_vendor_info->GetManufacturer());
+  EXPECT_EQ(model, read_vendor_info->GetModel());
+  EXPECT_EQ(notes, read_vendor_info->GetNotes());
+
+  const Mesh* read_mesh = device->GetMesh();
+  ASSERT_NE(nullptr, read_mesh);
+  EXPECT_EQ(kVertexCount, read_mesh->GetVertexCount());
+  EXPECT_EQ(kVertexPosition, read_mesh->GetVertexPosition());
+  EXPECT_EQ(kFaceCount, read_mesh->GetFaceCount());
+  EXPECT_EQ(kFaceIndices, read_mesh->GetFaceIndices());
+  EXPECT_FALSE(read_mesh->GetMetric());
+  EXPECT_EQ(kSoftware, read_mesh->GetSoftware());
+
+  const NavigationalConnectivity* read_navigational_connectivity =
+      device->GetNavigationalConnectivity();
+  ASSERT_NE(nullptr, read_navigational_connectivity);
+  EXPECT_EQ(kNavigationalEdges,
+            read_navigational_connectivity->GetNavigationalEdges());
 }
 
 TEST(Device, FromDataEmptyRevision) {
   std::unique_ptr<DevicePose> device_pose = CreateDevicePose();
-  std::unique_ptr<Device> device =
-      Device::FromData("", std::move(device_pose), nullptr, nullptr);
+  std::unique_ptr<Device> device = Device::FromData(
+      "", std::move(device_pose), nullptr, nullptr, nullptr, nullptr, nullptr);
   ASSERT_EQ(nullptr, device);
 }
 
 TEST(Device, FromDataNoCameras) {
-  std::unique_ptr<Device> device =
-      Device::FromData("1.01", nullptr, nullptr, nullptr);
+  std::unique_ptr<Device> device = Device::FromData(
+      "1.02", nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
   ASSERT_NE(nullptr, device);
   EXPECT_EQ(nullptr, device->GetCameras());
   EXPECT_EQ(nullptr, device->GetDevicePose());
+  EXPECT_EQ(nullptr, device->GetVendorInfo());
 }
 
 TEST(Device, Serialize) {
@@ -203,9 +295,20 @@ TEST(Device, Serialize) {
   std::unique_ptr<Profiles> profiles = CreateProfiles();
   ASSERT_NE(nullptr, profiles);
 
+  std::unique_ptr<VendorInfo> vendor_info = CreateVendorInfo();
+  ASSERT_NE(nullptr, vendor_info);
+
+  std::unique_ptr<Mesh> mesh = CreateMesh();
+  ASSERT_NE(nullptr, mesh);
+
+  std::unique_ptr<NavigationalConnectivity> navigational_connectivity =
+      CreateNavigationalConnectivity();
+  ASSERT_NE(nullptr, navigational_connectivity);
+
   std::unique_ptr<Device> device =
-      Device::FromData("1.01", std::move(device_pose), std::move(profiles),
-                       std::move(cameras));
+      Device::FromData("1.02", std::move(device_pose), std::move(profiles),
+                       std::move(cameras), std::move(vendor_info),
+                       std::move(mesh), std::move(navigational_connectivity));
   ASSERT_NE(nullptr, device);
 
   // Create serializer.
@@ -223,17 +326,19 @@ TEST(Device, ReadMetadata) {
   xmlNodePtr description_node =
       GetFirstDescriptionElement(xmp_data->ExtendedSection());
 
+  const char namespaceHref[] = "http://fakeh.ref";
+
   // XDM Device node.
-  xmlNsPtr device_ns = NewNs("http://fakeh.ref", XdmConst::Device());
+  xmlNsPtr device_ns = NewNs(namespaceHref, XdmConst::Device());
   xmlNodePtr device_node = NewNode(device_ns, XdmConst::Device());
   xmlAddChild(description_node, device_node);
   xmlSetNsProp(device_node, device_ns, ToXmlChar("Revision"),
-               ToXmlChar("1.01"));
+               ToXmlChar("1.02"));
 
   // Device:DevicePose node.
   xmlNodePtr pose_node = NewNode(device_ns, "DevicePose");
   xmlAddChild(device_node, pose_node);
-  xmlNsPtr pose_ns = NewNs("http://fakeh.ref", "DevicePose");
+  xmlNsPtr pose_ns = NewNs(namespaceHref, "DevicePose");
   xmlSetNsProp(pose_node, pose_ns, ToXmlChar("Latitude"), ToXmlChar("1.5"));
   xmlSetNsProp(pose_node, pose_ns, ToXmlChar("Longitude"), ToXmlChar("2.5"));
   xmlSetNsProp(pose_node, pose_ns, ToXmlChar("Altitude"), ToXmlChar("-1"));
@@ -243,7 +348,7 @@ TEST(Device, ReadMetadata) {
   xmlAddChild(device_node, cameras_node);
 
   // rdf:Seq node.
-  xmlNsPtr rdf_ns = NewNs("http://fakeh.ref", XmlConst::RdfPrefix());
+  xmlNsPtr rdf_ns = NewNs(namespaceHref, XmlConst::RdfPrefix());
   xmlNodePtr cameras_rdf_seq_node = NewNode(rdf_ns, XmlConst::RdfSeq());
   xmlAddChild(cameras_node, cameras_rdf_seq_node);
 
@@ -255,7 +360,7 @@ TEST(Device, ReadMetadata) {
 
   int num_cameras = 3;
   xmlNsPtr audio_ns = NewNs(audio_ns_href, "Audio");
-  xmlNsPtr camera_ns = NewNs("http://fakeh.ref", XdmConst::Camera());
+  xmlNsPtr camera_ns = NewNs(namespaceHref, XdmConst::Camera());
   for (int i = 0; i < num_cameras; i++) {
     xmlNodePtr camera_node = NewNode(device_ns, "Camera");
     xmlNodePtr audio_node = NewNode(camera_ns, "Audio");
@@ -270,10 +375,53 @@ TEST(Device, ReadMetadata) {
     xmlAddChild(cameras_rdf_seq_node, rdf_li_node);
   }
 
+  // Set up VendorInfo node.
+  xmlNodePtr vendor_info_node = NewNode(device_ns, "VendorInfo");
+  xmlAddChild(device_node, vendor_info_node);
+  xmlNsPtr vendor_info_ns = NewNs(namespaceHref, "VendorInfo");
+  xmlSetNsProp(vendor_info_node, vendor_info_ns, ToXmlChar("Manufacturer"),
+               ToXmlChar(manufacturer.data()));
+  xmlSetNsProp(vendor_info_node, vendor_info_ns, ToXmlChar("Model"),
+               ToXmlChar(model.data()));
+  xmlSetNsProp(vendor_info_node, vendor_info_ns, ToXmlChar("Notes"),
+               ToXmlChar(notes.data()));
+
+  // Set up Mesh node.
+  string base64_encoded_vertex_position;
+  ASSERT_TRUE(
+      EncodeFloatArrayBase64(kVertexPosition, &base64_encoded_vertex_position));
+  string base64_encoded_face_indices;
+  ASSERT_TRUE(EncodeIntArrayBase64(kFaceIndices, &base64_encoded_face_indices));
+  xmlNodePtr mesh_node = NewNode(device_ns, "Mesh");
+  xmlAddChild(device_node, mesh_node);
+  xmlNsPtr mesh_ns = NewNs(namespaceHref, XdmConst::Mesh());
+  xmlSetNsProp(mesh_node, mesh_ns, ToXmlChar("VertexCount"),
+               ToXmlChar(SimpleItoa(kVertexCount).c_str()));
+  xmlSetNsProp(mesh_node, mesh_ns, ToXmlChar("VertexPosition"),
+               ToXmlChar(base64_encoded_vertex_position.data()));
+  xmlSetNsProp(mesh_node, mesh_ns, ToXmlChar("FaceCount"),
+               ToXmlChar(SimpleItoa(kFaceCount).c_str()));
+  xmlSetNsProp(mesh_node, mesh_ns, ToXmlChar("FaceIndices"),
+               ToXmlChar(base64_encoded_face_indices.data()));
+  xmlSetNsProp(mesh_node, mesh_ns, ToXmlChar("Metric"), ToXmlChar("true"));
+  xmlSetNsProp(mesh_node, mesh_ns, ToXmlChar("Software"), ToXmlChar(kSoftware));
+
+  // Set up NavigationalConnectivity node.
+  xmlNodePtr navigational_connectivity_node =
+      NewNode(device_ns, "NavigationalConnectivity");
+  xmlAddChild(device_node, navigational_connectivity_node);
+  xmlNsPtr navigational_connectivity_ns =
+      NewNs(namespaceHref, XdmConst::NavigationalConnectivity());
+  xmlNodePtr navigational_edges_node =
+      NewNode(navigational_connectivity_ns, "NavigationalEdges");
+  xmlAddChild(navigational_connectivity_node, navigational_edges_node);
+  xmlNodePtr rdf_seq_node = SetupRdfSeqOfIndices(kNavigationalEdges);
+  xmlAddChild(navigational_edges_node, rdf_seq_node);
+
   // Create a Device object from the XMP metadata.
   std::unique_ptr<Device> device = Device::FromXmp(*xmp_data);
   ASSERT_NE(nullptr, device);
-  EXPECT_EQ("1.01", device->GetRevision());
+  EXPECT_EQ("1.02", device->GetRevision());
 
   // Check DevicePose.
   const DevicePose* pose = device->GetDevicePose();
@@ -301,11 +449,111 @@ TEST(Device, ReadMetadata) {
     EXPECT_EQ(kMediaData, audio->GetData());
   }
 
+  const VendorInfo* read_vendor_info = device->GetVendorInfo();
+  ASSERT_NE(nullptr, read_vendor_info);
+  EXPECT_EQ(manufacturer, read_vendor_info->GetManufacturer());
+  EXPECT_EQ(model, read_vendor_info->GetModel());
+  EXPECT_EQ(notes, read_vendor_info->GetNotes());
+
+  const Mesh* read_mesh = device->GetMesh();
+  EXPECT_NE(nullptr, read_mesh);
+  EXPECT_EQ(kVertexCount, read_mesh->GetVertexCount());
+  EXPECT_EQ(kVertexPosition, read_mesh->GetVertexPosition());
+  EXPECT_EQ(kFaceCount, read_mesh->GetFaceCount());
+  EXPECT_EQ(kFaceIndices, read_mesh->GetFaceIndices());
+  EXPECT_EQ(kSoftware, read_mesh->GetSoftware());
+  EXPECT_TRUE(read_mesh->GetMetric());
+
+  const NavigationalConnectivity* read_navigational_connectivity =
+      device->GetNavigationalConnectivity();
+  EXPECT_NE(nullptr, read_navigational_connectivity);
+  EXPECT_EQ(kNavigationalEdges,
+            read_navigational_connectivity->GetNavigationalEdges());
+
   xmlFreeNs(audio_ns);
   xmlFreeNs(camera_ns);
   xmlFreeNs(device_ns);
   xmlFreeNs(pose_ns);
   xmlFreeNs(rdf_ns);
+  xmlFreeNs(vendor_info_ns);
+  xmlFreeNs(mesh_ns);
+  xmlFreeNs(navigational_connectivity_ns);
+  xmlFreeNs(rdf_seq_node->ns);
+}
+
+TEST(Device, ReadMetadataFromXmlFileThenSerialize) {
+  // Create a Device object from the .xml file.
+  const string testdata_path =
+      TestFileAbsolutePath(kDeviceDataPosedCollectionPath);
+  std::unique_ptr<Device> device = Device::FromXmlFile(testdata_path);
+  ASSERT_NE(nullptr, device);
+  EXPECT_EQ("1.02", device->GetRevision());
+
+  // Check DevicePose.
+  const DevicePose* device_pose = device->GetDevicePose();
+  ASSERT_NE(nullptr, device_pose);
+  std::vector<double> values = device_pose->GetPosition();
+  ASSERT_EQ(3, values.size());
+  EXPECT_DOUBLE_EQ(kDeviceLat, values[0]);
+  EXPECT_DOUBLE_EQ(kDeviceLon, values[1]);
+  EXPECT_DOUBLE_EQ(kDeviceAlt, values[2]);
+  EXPECT_EQ(0, device_pose->GetOrientationRotationXYZAngle().size());
+
+  // Check Cameras.
+  const Cameras* cameras = device->GetCameras();
+  ASSERT_NE(nullptr, cameras);
+
+  const std::vector<const Camera*>& read_camera_list = cameras->GetCameras();
+  EXPECT_EQ(3, read_camera_list.size());
+  for (int i = 0; i < kCameraNum; i++) {
+    const Camera* camera = read_camera_list[i];
+    ASSERT_NE(nullptr, camera);
+
+    const Image* image = camera->GetImage();
+    ASSERT_NE(nullptr, image);
+    EXPECT_EQ(kImageMime, image->GetMime());
+    EXPECT_EQ(kImageId, image->GetImageId());
+    EXPECT_TRUE(image->GetData().empty());
+
+    const CameraPose* camera_pose = camera->GetCameraPose();
+    ASSERT_NE(nullptr, camera_pose);
+    std::vector<double> values = camera_pose->GetOrientationRotationXYZAngle();
+    ASSERT_EQ(4, values.size());
+    EXPECT_DOUBLE_EQ(kCameraRotationAxisX, values[0]);
+    EXPECT_DOUBLE_EQ(kCameraRotationAxisY, values[1]);
+    EXPECT_DOUBLE_EQ(kCameraRotationAxisZ, values[2]);
+    EXPECT_DOUBLE_EQ(kCameraRotationAngle, values[3]);
+    EXPECT_EQ(0, camera_pose->GetPositionXYZ().size());
+  }
+
+  const VendorInfo* read_vendor_info = device->GetVendorInfo();
+  ASSERT_NE(nullptr, read_vendor_info);
+  EXPECT_EQ(manufacturer, read_vendor_info->GetManufacturer());
+  EXPECT_EQ(model, read_vendor_info->GetModel());
+  EXPECT_EQ(notes, read_vendor_info->GetNotes());
+
+  const Mesh* read_mesh = device->GetMesh();
+  EXPECT_NE(nullptr, read_mesh);
+  EXPECT_EQ(kVertexCount, read_mesh->GetVertexCount());
+  EXPECT_EQ(kVertexPosition, read_mesh->GetVertexPosition());
+  EXPECT_EQ(kFaceCount, read_mesh->GetFaceCount());
+  EXPECT_EQ(kFaceIndices, read_mesh->GetFaceIndices());
+  EXPECT_EQ(kSoftware, read_mesh->GetSoftware());
+  EXPECT_FALSE(read_mesh->GetMetric());
+
+  const NavigationalConnectivity* read_navigational_connectivity =
+      device->GetNavigationalConnectivity();
+  EXPECT_NE(nullptr, read_navigational_connectivity);
+  EXPECT_EQ(kNavigationalEdges,
+            read_navigational_connectivity->GetNavigationalEdges());
+
+  // Serialize Device and verify the serialized string is the same as the
+  // content in the .xml file.
+  std::unique_ptr<XmpData> xmp_data = CreateXmpData(true);
+  ASSERT_TRUE(device->SerializeToXmp(xmp_data.get()));
+  std::string expected_xdm_data;
+  ReadFileToStringOrDie(testdata_path, &expected_xdm_data);
+  EXPECT_EQ(expected_xdm_data, XmlDocToString(xmp_data->ExtendedSection()));
 }
 
 }  // namespace

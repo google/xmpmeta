@@ -44,25 +44,26 @@ class DeserializerImpl : public Deserializer {
   // If prefix is empty, the deserializer will be created on the first node
   // found with a name that matches child_name.
   // child_name is the name of the next node to deserialize.
-  std::unique_ptr<Deserializer>
-      CreateDeserializer(const string& prefix,
-                         const string& child_name) const override;
+  std::unique_ptr<Deserializer> CreateDeserializer(
+      const string& prefix, const string& child_name) const override;
 
   // Returns a Deserializer from a list element node, if one is available as
   // a descendant of node_.
   // If prefix is empty, the deserializer will be created on the first node
   // found with a name that matches child_name.
   // Returns null if seq_node_ is null or if the index is out of range.
-  std::unique_ptr<Deserializer>
-      CreateDeserializerFromListElementAt(const string& prefix,
-                                          const string& list_name,
-                                          int index) const override;
+  std::unique_ptr<Deserializer> CreateDeserializerFromListElementAt(
+      const string& prefix, const string& list_name, int index) const override;
 
   // Parsers for XML properties.
   // If prefix is empty, the node's namespace may be null. Otherwise, it must
   // not be null.
   bool ParseBase64(const string& prefix, const string& name,
                    string* value) const override;
+  bool ParseIntArrayBase64(const string& prefix, const string& name,
+                           std::vector<int>& values) const override;
+  bool ParseFloatArrayBase64(const string& prefix, const string& name,
+                             std::vector<float>& values) const override;
   bool ParseBoolean(const string& prefix, const string& name,
                     bool* value) const override;
   bool ParseDouble(const string& prefix, const string& name,

@@ -35,16 +35,17 @@
 #include "image/wimage/wimage.h"
 #include "image/wimage/wimage_file_io.h"
 #include "strings/stringpiece.h"
+#include "strings/stringpiece_utils.h"
 #include "xmpmeta/gaudio.h"
 #include "xmpmeta/gimage.h"
 #include "xmpmeta/gpano.h"
 #include "xmpmeta/pano_meta_data.h"
 #include "xmpmeta/vr_photo_writer.h"
+#include "xmpmeta/xml/serializer_impl.h"
+#include "xmpmeta/xml/utils.h"
 #include "xmpmeta/xmp_const.h"
 #include "xmpmeta/xmp_data.h"
 #include "xmpmeta/xmp_writer.h"
-#include "xmpmeta/xml/serializer_impl.h"
-#include "xmpmeta/xml/utils.h"
 
 // Required flags.
 DEFINE_string(data_dir, "", "Directory of input and output data");
@@ -82,7 +83,8 @@ void InitializePanoMetaData(const string& input_name,
                             PanoMetaData* meta_data) {
   WImageBuffer4_b image;
   StringPiece extension = file::Extension(input_name);
-  if (extension.starts_with("p") || extension.starts_with("P")) {
+  if (strings::StartsWith(extension, "p") ||
+      strings::StartsWith(extension, "P")) {
     CHECK(WImageFileIO::ReadImageFromPNG(input_name, &image)) << input_name;
   } else {
     CHECK(WImageFileIO::ReadImageFromJPEG(input_name, &image)) << input_name;

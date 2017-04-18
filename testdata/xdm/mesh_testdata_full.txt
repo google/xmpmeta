@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Device>
+  <Device:Mesh Mesh:VertexCount="4" Mesh:VertexPosition="AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAIA/" Mesh:FaceCount="4" Mesh:FaceIndices="AAAAAAEAAAACAAAAAAAAAAEAAAADAAAAAAAAAAMAAAACAAAAAQAAAAIAAAADAAAA" Mesh:Metric="false" Mesh:Software="software"/>
+</Device>

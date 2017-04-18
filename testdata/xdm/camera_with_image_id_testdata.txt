@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Device>
-  <Device:Camera>
-    <Camera:Audio Audio:Mime="audio/mp4" Audio:Data="MTIzQUJDNDU2REVG"/>
-    <Camera:Image Image:Mime="image/jpeg" Image:Data="MTIzQUJDNDU2REVG"/>
+  <Device:Camera Camera:ImageId="unique_image_id">
     <Camera:CameraPose CameraPose:RotationAxisX="0.371391" CameraPose:RotationAxisY="0.742781" CameraPose:RotationAxisZ="0.557086" CameraPose:RotationAngle="1.570000"/>
     <Camera:VendorInfo VendorInfo:Manufacturer="manufacturer_1" VendorInfo:Model="model_1" VendorInfo:Notes="notes_1"/>
     <Camera:EquirectModel EquirectModel:CroppedAreaLeftPixels="0" EquirectModel:CroppedAreaTopPixels="1530" EquirectModel:CroppedAreaImageWidthPixels="3476" EquirectModel:CroppedAreaImageHeightPixels="1355" EquirectModel:FullImageWidthPixels="8192" EquirectModel:FullImageHeightPixels="4096"/>
